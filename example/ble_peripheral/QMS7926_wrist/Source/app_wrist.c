@@ -55,12 +55,6 @@
 #include "peripheral.h"
 #include "gapbondmgr.h"
 #include "app_wrist.h"
-#include "ui_page.h"
-#include "ui_task.h"
-#include "ui_display.h"
-#include "ui_dispTFT.h"
-#include "touch_key.h"
-//#include "em70xx.h"
 #include "hrs3300.h"
 #include "QMA7981.h"
 #include "battery.h"
@@ -233,20 +227,12 @@ static const gapBondCBs_t WristBondCB =
 //static KSCAN_ROWS_e kscan_rows[NUM_KEY_ROWS] = {KEY_ROW_P00,KEY_ROW_P02,KEY_ROW_P25,KEY_ROW_P18}; 
 //static KSCAN_COLS_e kscan_cols[NUM_KEY_COLS] = {KEY_COL_P01,KEY_COL_P03,KEY_COL_P24,KEY_COL_P20};
 
-
-
 static void on_HeartRateValueUpdate(hr_ev_t* pev)
 {
   switch(pev->ev){
   case HR_EV_HR_VALUE:
     {
-      ui_ev_t ev = {
-          .ev = UI_EV_HEARTRATE,
-          .param = (uint16)pev->value,
-          .data = NULL
-      };
       wristProfileResponseHRValue(pev->value);
-      ui_fsm_run(&ev);
     }
     break;
   case HR_EV_RAW_DATA:
@@ -259,19 +245,6 @@ static void on_HeartRateValueUpdate(hr_ev_t* pev)
   }
 }
 
-
-
-
-
-
-
-
-
-void on_touchKey(touch_evt_t key_evt)
-{
-  
-  osal_set_event(AppWrist_TaskID, TOUCH_PRESS_EVT);
-}
 
 void on_kscan_evt(kscan_Evt_t* kscan_evt)
 {
@@ -313,7 +286,6 @@ void on_QMA7981_evt(QMA7981_ev_t* pev)
     g_acc_value[2] = gz;
     if(gx==0 && gy==0 &&gz==0)
       return;
-    ui_accelerator_event(g_acc_value);
     wristProfileResponseAccelerationData(gx/4,gy/4,gz/4);
     
   }
@@ -418,8 +390,6 @@ void appWristInit( uint8 task_id )
 //  light_ctrl(1,0);
 //  light_ctrl(2,0);
   hrs3300_register(on_HeartRateValueUpdate);
-  touch_init(on_touchKey);
-  ui_init();
   batt_init();
 	QMA7981_init(on_QMA7981_evt);
   {
@@ -486,18 +456,6 @@ uint16 appWristProcEvt( uint8 task_id, uint16 events )
     app_datetime_sync_handler();
     return ( events ^ TIMER_DT_EVT );
   }
-  if( events & TIMER_UI_EVT)
-  {
-    ui_page_timer_evt(NULL);
-
-    return ( events ^ TIMER_UI_EVT );
-  }
-  if( events & TOUCH_PRESS_EVT)
-  {
-    ui_key_evt(NULL);
-
-    return ( events ^ TOUCH_PRESS_EVT );
-  }
   if( events & TIMER_HR_EVT)
   {
     heart_rate_meas_timeout_handler();
@@ -513,12 +471,12 @@ uint16 appWristProcEvt( uint8 task_id, uint16 events )
   {
     batt_evt_t evt = batt_charge_detect() ? BATT_CHARGE_PLUG : BATT_CHARGE_UNPLUG;
     LOG("batt_evt_t %d\n", evt);
-    ui_batt_event(evt);
+    //ui_batt_event(evt);
     return ( events ^ BATT_CHARGE_EVT);
   }
   if( events & BATT_VALUE_EVT)
   {
-    ui_batt_event(BATT_VOLTAGE);
+    //ui_batt_event(BATT_VOLTAGE);
     return ( events ^ BATT_VALUE_EVT);
   }
   if( events & ACC_DATA_EVT)

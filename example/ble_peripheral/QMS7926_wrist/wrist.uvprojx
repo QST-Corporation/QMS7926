@@ -10,7 +10,7 @@
       <TargetName>wrist</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
-      <pCCUsed>5060750::V5.06 update 6 (build 750)::ARMCC</pCCUsed>
+      <pCCUsed>5060960::V5.06 update 7 (build 960)::.\ARMCC</pCCUsed>
       <uAC6>0</uAC6>
       <TargetOption>
         <TargetCommonOption>
@@ -185,6 +185,7 @@
             <uocXRam>0</uocXRam>
             <RvdsVP>0</RvdsVP>
             <RvdsMve>0</RvdsMve>
+            <RvdsCdeCp>0</RvdsCdeCp>
             <hadIRAM2>0</hadIRAM2>
             <hadIROM2>0</hadIROM2>
             <StupSel>8</StupSel>
@@ -351,7 +352,7 @@
             <NoWarn>0</NoWarn>
             <uSurpInc>0</uSurpInc>
             <useXO>0</useXO>
-            <uClangAs>0</uClangAs>
+            <ClangAsOpt>4</ClangAsOpt>
             <VariousControls>
               <MiscControls></MiscControls>
               <Define></Define>
@@ -468,11 +469,6 @@
               <FilePath>.\Source\ble\wristservice.c</FilePath>
             </File>
             <File>
-              <FileName>touch_key.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Source\touch_key.c</FilePath>
-            </File>
-            <File>
               <FileName>battery.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Source\battery.c</FilePath>
@@ -575,56 +571,6 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>ui</GroupName>
-          <Files>
-            <File>
-              <FileName>lcd_allvision.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Source\ui\lcd_allvision.c</FilePath>
-            </File>
-            <File>
-              <FileName>res_tab_128x32.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Source\ui\res_tab_128x32.c</FilePath>
-            </File>
-            <File>
-              <FileName>ui_128x32_normal.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Source\ui\ui_128x32_normal.c</FilePath>
-            </File>
-            <File>
-              <FileName>ui_display.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Source\ui\ui_display.c</FilePath>
-            </File>
-            <File>
-              <FileName>ui_page.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Source\ui\ui_page.c</FilePath>
-            </File>
-            <File>
-              <FileName>ui_task.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Source\ui\ui_task.c</FilePath>
-            </File>
-            <File>
-              <FileName>lcd_TFT.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Source\ui\lcd_TFT.c</FilePath>
-            </File>
-            <File>
-              <FileName>ui_160x80_TFT.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Source\ui\ui_160x80_TFT.c</FilePath>
-            </File>
-            <File>
-              <FileName>ui_dispTFT.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Source\ui\ui_dispTFT.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
           <GroupName>library</GroupName>
           <Files>
             <File>
@@ -708,7 +654,7 @@
                 <NoWarn>2</NoWarn>
                 <uSurpInc>2</uSurpInc>
                 <useXO>2</useXO>
-                <uClangAs>2</uClangAs>
+                <ClangAsOpt>0</ClangAsOpt>
                 <VariousControls>
                   <MiscControls></MiscControls>
                   <Define></Define>

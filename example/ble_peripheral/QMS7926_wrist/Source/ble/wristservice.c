@@ -50,9 +50,9 @@
 #include "gatt_uuid.h"
 #include "gattservapp.h"
 #include "gapbondmgr.h"
-#include "ui_page.h"
+#include "app_err.h"
+#include "battery.h"
 #include "led_light.h"
-//#include "em70xx.h"
 #include "hrs3300.h"
 #include "wristservice.h"
 #include "log.h"
@@ -386,11 +386,12 @@ static int cmd_read_batt_volt(const uint8* data, uint16 len)
 void msg_notif_dispatch(void)
 {
   notifInfo_t* p_notifInfo = &(sWristService.notifInfo);
-  ui_ev_t ev;
+  //ui_ev_t ev;
   switch(p_notifInfo->type){
   case MSG_NOTIF_T_UNDEF:// 0
     break;
   case MSG_NOTIF_T_CALL://  1
+  #if 0
     ev.ev = UI_EV_BLE_CALL;
     ui_fsm_run(&ev);
     ev.ev = UI_EV_BLE_CALL_INFO;
@@ -425,6 +426,7 @@ void msg_notif_dispatch(void)
     ev.ev = UI_EV_BLE_MSG_NOTIFY;
     ev.data = (uint8*)p_notifInfo->data;
     ui_fsm_run(&ev);
+  #endif
     break;
   default:
     break;

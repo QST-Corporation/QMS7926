@@ -217,15 +217,8 @@ bool Hrs3300_chip_init()
 	#ifdef RTT_PRINT
 	DEBUG_PRINTF(0,">>> hrs3300 init id = %d\r\n", id);
 	#endif
-		
-		
-
-        return true;
-
 
 	  return true;
-RTN:
-	  return false;
 }
 
 void Hrs3300_chip_enable()
