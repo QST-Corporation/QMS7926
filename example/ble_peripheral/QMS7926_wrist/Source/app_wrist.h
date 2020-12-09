@@ -58,10 +58,10 @@
 /** Wrist Task Events**/
 //start
 #define START_DEVICE_EVT                        0x0001
-
+#define HOST_CMD_EVT                            0x0002  //for host command receive
 //timer
 #define TIMER_DT_EVT                            0x0004  //for datetime sync
-#define HOST_CMD_EVT                            0x0008  //for host command receive
+#define ACC_INT_EVT                             0x0008  //for gsensor INT service
 #define TIMER_HR_EVT                            0x0010  //for heartrate detect
 #define TIMER_BATT_EVT                          0x0020  //for battery detect
 #define BATT_VALUE_EVT                          0x0040  //event for battery voltage value update

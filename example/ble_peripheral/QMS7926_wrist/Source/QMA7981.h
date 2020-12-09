@@ -33,6 +33,8 @@
 #ifndef _QMA7981_H
 #define _QMA7981_H
 
+#define     QMA7981_STEPCOUNTER
+#define     QMA7981_HAND_UP_DOWN
 
 #define     QMA7981_RAISE_CFG5              0x3F
 #define     QMA7981_RAISE_CFG4              0x3E
@@ -214,17 +216,54 @@
 #define     ACC_DATA_X_HIGH                 0xFF
 #define     ACC_DATA_X_LOW                  0xFC
 
+#if 1
+
+#define QMA7981_DELAY				0xff
+/*Register Map*/
+#define QMA7981_CHIP_ID		  0x00
+#define QMA7981_XOUTL				0x01
+#define QMA7981_XOUTH				0x02
+#define QMA7981_YOUTL				0x03
+#define QMA7981_YOUTH				0x04
+#define QMA7981_ZOUTL				0x05
+#define QMA7981_ZOUTH				0x06
+#define QMA7981_STEP_CNT_L			0x07
+#define QMA7981_INT_STAT0			0x0a
+#define QMA7981_INT_STAT1			0x0b
+#define QMA7981_INT_STAT2			0x0c
+#define QMA7981_INT_STAT3			0x0d
+#define QMA7981_FIFO_STATE			0x0e
+#define QMA7981_STEP_CNT_M			0x0e
+#define QMA7981_REG_RANGE			0x0f
+#define QMA7981_REG_BW_ODR			0x10
+#define QMA7981_REG_POWER_CTL		0x11
+#define QMA7981_STEP_SAMPLE_CNT		0x12
+#define QMA7981_STEP_PRECISION		0x13
+#define QMA7981_STEP_TIME_LOW		0x14
+#define QMA7981_STEP_TIME_UP		0x15
+#define QMA7981_INTPIN_CFG			0x20
+#define QMA7981_INT_CFG				0x21
+#define QMA7981_OS_CUST_X		    0x27
+#define QMA7981_OS_CUST_Y			0x28
+#define QMA7981_OS_CUST_Z			0x29
+#define QMA7981_STEP_TIME_UP		0x15
+
+/* Accelerometer Sensor Full Scale */
+#define QMA7981_RANGE_2G			0x01
+#define QMA7981_RANGE_4G			0x02
+#define QMA7981_RANGE_8G			0x04
+#define QMA7981_RANGE_16G			0x08
+#define QMA7981_RANGE_32G			0x0f
+#endif
 
 enum{
-	wufs_event = 0x01,	//
-	stap_event = 0x02,	//single tap
-	dtap_event = 0x04,	//double tap
-	tps_event  = 0x08,
-	wmi_event  = 0x10,	//acceleration data
-	tilt_event  = 0x20	//tilt event
+	handUp_event   = 0x01,	//hand raise
+	handDown_event = 0x02,	//hand down
+	stap_event     = 0x04,	//single tap
+	dtap_event     = 0x08,  //double tap
+	wmi_event      = 0x10,	//acceleration data
+	tilt_event     = 0x20	//tilt event
 };
-
-
 
 typedef struct _QMA7981_ev_t{
 	uint8_t	ev;
@@ -238,6 +277,7 @@ typedef void (*QMA7981_evt_hdl_t)	(QMA7981_ev_t* pev);
 
 uint16_t QMA7981_fetch_acc_data(void);
 uint8_t drv_QMA7981_event_handle(void);
+//void QMA7981_int_event_handler(void);
 int QMA7981_enable_tilt(bool en);
 int QMA7981_enable(void);
 int QMA7981_disable(void);

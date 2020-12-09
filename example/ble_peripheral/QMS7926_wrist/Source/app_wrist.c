@@ -272,30 +272,34 @@ void on_QMA7981_evt(QMA7981_ev_t* pev)
 {
   int g_acc_value[3];
   if(pev->ev == wmi_event){
-    int i;
-    int gx = 0,gy = 0,gz = 0;
-  	int16_t *acc_data = (int16_t *)pev->data;
-    for(i = 0; i < pev->size/(sizeof(int16_t)*3); i++)
-    {
-      gx += (int)acc_data[0];
-      gy += (int)acc_data[1];
-      gz += (int)acc_data[2];
-      acc_data+=3;
-    }
-    //LOG("X%d,Y%d,Z%d\n",gx,gy,gz);
-    
-    gx = gx*6/pev->size;
-    gy = gy*6/pev->size;
-    gz = gz*6/pev->size;
+    int16_t gx = 0,gy = 0,gz = 0;
+  	uint8_t *acc_data = pev->data;
+
+    gx = (int16_t)((acc_data[1]<<8)|(acc_data[0]));
+	gy = (int16_t)((acc_data[3]<<8)|(acc_data[2]));
+	gz = (int16_t)((acc_data[5]<<8)|(acc_data[4]));
+
+    //LOG("RAW:X%d,Y%d,Z%d\n",gx,gy,gz);
+    gx = gx>>2;
+	gy = gy>>2;
+	gz = gz>>2;
+
     //LOG("X%d,Y%d,Z%d\n",gx,gy,gz);
     g_acc_value[0] = gx;
     g_acc_value[1] = gy;
     g_acc_value[2] = gz;
     if(gx==0 && gy==0 &&gz==0)
       return;
-    wristProfileResponseAccelerationData(gx/4,gy/4,gz/4);
-    
+    wristProfileResponseAccelerationData(gx,gy,gz);
   }
+#if defined(QMA7981_HAND_UP_DOWN)
+  else if (pev->ev == handUp_event) {
+    LOG(" hand raise!\n");
+  }
+  else if (pev->ev == handDown_event) {
+    LOG(" hand down!\n");
+  }
+#endif
 }
 
 void host_wakeup_evt(GPIO_Pin_e pin,IO_Wakeup_Pol_e type)
