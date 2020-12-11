@@ -55,7 +55,7 @@
 #include "peripheral.h"
 #include "gapbondmgr.h"
 #include "app_wrist.h"
-#include "hrs3300.h"
+#include "hrs/hx3690l.h"
 #include "QMA7981.h"
 #include "battery.h"
 #include "led_light.h"
@@ -389,7 +389,7 @@ void appWristInit( uint8 task_id )
 //  light_ctrl(0,0);
 //  light_ctrl(1,0);
 //  light_ctrl(2,0);
-  hrs3300_register(on_HeartRateValueUpdate);
+  hx3690l_register(on_HeartRateValueUpdate);
   batt_init();
 	QMA7981_init(on_QMA7981_evt);
   {

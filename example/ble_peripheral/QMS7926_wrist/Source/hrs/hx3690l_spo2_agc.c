@@ -5,10 +5,10 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "twi_master.h"
 #include "hx3690l.h"
 #include "hx3690l_spo2_agc.h"
 //#include "hx3690l_spo2_alg.h"
+#include "log.h"
 
 #ifdef SPO2_ALG_LIB
 
@@ -761,7 +761,7 @@ uint8_t hx3690l_spo2_read(spo2_sensor_data_t * s_dat)
             red_buf[i],ir_buf[i],s_buf[i*3],s_buf[i*3+1],s_buf[i*3+2],\
             calReg.R_LED,calReg.IR_LED,calReg.red_idac,calReg.ir_idac);
             
-            if (s_buf[i*3+1] != 0)  // »·¾³¹â²»»áÎª0£¬ ·ÀÖ¹Êý¾Ý´íÎ»³öÏÖÈëÍó
+            if (s_buf[i*3+1] != 0)  // ï¿½ï¿½ï¿½ï¿½ï¿½â²»ï¿½ï¿½Îª0ï¿½ï¿½ ï¿½ï¿½Ö¹ï¿½ï¿½ï¿½Ý´ï¿½Î»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             {
 	            if (hx3690_spo2_change_to_wear(SPO2_MODE,Ir_src_data))
 	            {

@@ -4,11 +4,8 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "SEGGER_RTT.h"
-#include "nrf_delay.h"
-
 //////////////////////////////
-
+#include "log.h"
 
 #include "hx3690l.h"
 #include "hx3690q_factory_test.h"
@@ -723,7 +720,7 @@ bool hx3693_factroy_test_old(uint32_t  test_mode)
 	return nrtn;
 
 }
-bool hx3693_factroy_test(TEST_MODE test_mode,uint8_t len,int32_t *ppg_buf,
+bool hx3693_factroy_test(HX3693_TEST_MODE test_mode,uint8_t len,int32_t *ppg_buf,
     int32_t *ir_buf)
 {
     bool nrtn = false;

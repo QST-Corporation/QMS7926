@@ -5,11 +5,10 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "twi_master.h"
 #include "hx3690l.h"
 #include "hx3690l_hrs_agc.h"
-#include "hx3690l_hrs_alg.h"
-#include "SEGGER_RTT.h"
+//#include "hx3690l_hrs_alg.h"
+#include "log.h"
 
 #ifdef HRS_ALG_LIB
 

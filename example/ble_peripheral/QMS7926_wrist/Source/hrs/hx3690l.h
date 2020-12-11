@@ -20,7 +20,7 @@
 
 #define AGC_DEBUG
 #ifdef AGC_DEBUG
-#define  AGC_LOG(...)     SEGGER_RTT_printf(0,__VA_ARGS__)
+#define  AGC_LOG(...)     LOG(__VA_ARGS__)
 #else
 #define	 AGC_LOG(...)
 
@@ -28,7 +28,7 @@
 
 #define HRS_DEBUG
 #ifdef HRS_DEBUG
-#define  DEBUG_PRINTF(...)     SEGGER_RTT_printf(__VA_ARGS__)
+#define  DEBUG_PRINTF(...)     LOG(__VA_ARGS__)
 #else
 #define	 DEBUG_PRINTF(...)
 #endif
@@ -215,7 +215,19 @@ extern uint8_t alg_ram[1*1024];
 extern uint8_t alg_ram[13*1024];
 #endif
 
+enum{
+  HR_EV_HR_VALUE = 1,
+  HR_EV_RAW_DATA
+};
 
+typedef struct
+{
+  uint8_t   ev;
+  uint8_t   value;
+  uint16_t*  data;
+}hr_ev_t;
+
+typedef void(* hx3690lCB_t)(hr_ev_t* pev);
 extern WORK_MODE_T work_mode_flag;
 
 void hx3690l_delay_us(uint32_t us);
@@ -232,7 +244,7 @@ void hx3690l_320ms_timer_cfg(bool en);
 void hx3690l_40ms_timer_cfg(bool en);
 void hx3690l_gpioint_cfg(bool en);
 bool hx3690l_init(WORK_MODE_T mode);
-void hx3690l_agc_Int_handle(void); 
+//void hx3690l_agc_Int_handle(GPIO_Pin_e pin,IO_Wakeup_Pol_e type);
 void hx3690l_gesensor_Int_handle(void);
 
 void hx3690l_spo2_ppg_init(void);
@@ -245,8 +257,10 @@ void hx3690l_ft_spo2_Int_handle(void);
 void hx3690l_hrs_ppg_init(void);
 void hx3690l_hrs_ppg_Int_handle(void);
 
-void display_refresh(void);
-void ble_rawdata_clear(void);
+int hx3690l_register(hx3690lCB_t cb);
+
+//void display_refresh(void);
+//void ble_rawdata_clear(void);
 
 
 #ifdef HRS_BLE_APP
@@ -259,12 +273,12 @@ uint32_t ble_hrs_heart_rate_send_ext(uint8_t flag,uint8_t data_cnt,uint8_t resul
 #endif
 uint32_t ble_rawdata_send_handler(void);
 
-extern uint32_t hx3690_timers_start(void);
-extern uint32_t hx3690_timers_stop(void);
-extern uint32_t hx3690_gpioint_init(void);
+//extern uint32_t hx3690_timers_start(void);
+//extern uint32_t hx3690_timers_stop(void);
+//extern uint32_t hx3690_gpioint_init(void);
 
-extern uint32_t hx3690_gpioint_enable(void);
-extern uint32_t hx3690_gpioint_disable(void);
+//extern uint32_t hx3690_gpioint_enable(void);
+//extern uint32_t hx3690_gpioint_disable(void);
 extern uint32_t gsen_read_timers_start(void);
 extern uint32_t gsen_read_timers_stop(void);
 
@@ -322,7 +336,7 @@ bool hx3690_spo2_alg_open_deep(void);
 SPO2_CAL_SET_T get_spo2_agc_status(void);
 SPO2_CAL_SET_T PPG_spo2_agc(void);
 bool hx3690_spo2_alg_send_data(int32_t *red_new_raw_data,int32_t *ir_new_raw_data, uint8_t dat_len,volatile int16_t *gsen_data_x,volatile int16_t *gsen_data_y,volatile int16_t *gsen_data_z);
-void heart_rate_meas_timeout_handler(void * p_context);
+void heart_rate_meas_timeout_handler(void);
 #endif 
 
 #endif

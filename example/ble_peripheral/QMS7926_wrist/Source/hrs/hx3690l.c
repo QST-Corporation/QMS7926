@@ -5,17 +5,19 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "SEGGER_RTT.h"
-#include "app_timer.h"
-#include "nrf_delay.h"
-#include "nrf_gpio.h"
-#include "nrf_drv_gpiote.h"
-#include "twi_master.h"
+#include <stdlib.h>
+#include "types.h"
+#include "app_wrist.h"
+#include "hal_mcu.h"
+#include "app_err.h"
+#include "OSAL_Timers.h"
+#include "i2c.h"
+#include "gpio.h"
+#include "log.h"
+#include "error.h"
+
 #include "hx3690l.h"
 #include "hx3690q_factory_test.h"
-
-#include "drv_oled.h"
-#include "opr_oled.h"
 
 #ifdef SPO2_VECTOR
 #include "spo2_vec.h" 
@@ -34,6 +36,7 @@ uint32_t PPG_buf_vec[8];
 #include "lis3dh_drv.h"
 #endif
 
+#define HX3690_I2C_ADDR     0x44
 const uint8_t  hx3690_accurate_first_shot = 0;
 const uint8_t  hx3690_up_factor1 = 3;
 const uint8_t  hx3690_up_shift1 = 2;
@@ -57,11 +60,10 @@ const int32_t  hrs_ir_unwear_thres = 8000;
 const int32_t  hrs_ir_wear_thres = 15000; 
 //SPO2_INFRARED_THRES
 const int32_t  spo2_ir_unwear_thres = 10000; 
-const int32_t  spo2_ir_wear_thres = 30000; 
+const int32_t  spo2_ir_wear_thres = 30000;
 
-
-static volatile oled_display_t oled_dis = {0};
-
+static hx3690lCB_t hx3690lCB = NULL;
+void hx3690l_agc_Int_handle(GPIO_Pin_e pin,IO_Wakeup_Pol_e type);
 
 #if defined(MALLOC_MEMORY)
 uint8_t alg_ram[1*1024] = {0};
@@ -102,62 +104,105 @@ void hx_free(void * ptr)
 
 void hx3690l_delay_us(uint32_t us)
 {
-    nrf_delay_us(us);
+    WaitUs(us);
 }
 
 void hx3690l_delay(uint32_t ms)
 {
-    nrf_delay_ms(ms);
+	volatile int i = 4500;
+	volatile int loop = ms;
+
+    while(loop) 
+    { 
+		loop--; 
+		for(; i; i--);
+	} 
 }
 
+static bool hr_timer_start(uint32 intval_ms)
+{
+    osal_start_timerEx(AppWrist_TaskID, TIMER_HR_EVT, intval_ms);
+    return true;
+}
+
+static bool hr_timer_stop(void)
+{
+    osal_stop_timerEx(AppWrist_TaskID, TIMER_HR_EVT);
+    return true;
+}
+
+static void* tyhx_i2c_init(void)
+{
+    hal_gpio_pull_set(P28, STRONG_PULL_UP);
+    hal_gpio_pull_set(P26, STRONG_PULL_UP);
+    hal_i2c_pin_init(I2C_0, P28, P26);
+    return hal_i2c_init(I2C_0, I2C_CLOCK_400K);
+}
+
+static int tyhx_i2c_deinit(void* pi2c)
+{
+    int ret = hal_i2c_deinit(pi2c);
+    hal_gpio_pin_init(P28,IE);
+    hal_gpio_pin_init(P26,IE);
+    return ret;
+}
 
 bool hx3690l_write_reg(uint8_t addr, uint8_t data) 
 {
     uint8_t data_buf[2];    
     data_buf[0] = addr;
     data_buf[1] = data;
-    twi_pin_switch(1);
-    twi_master_transfer(0x88, data_buf, 2, true);    //write    
-    return true;      
+    void* pi2c = tyhx_i2c_init();
+    hal_i2c_addr_update(pi2c, HX3690_I2C_ADDR);
+    {
+        HAL_ENTER_CRITICAL_SECTION();
+        hal_i2c_tx_start(pi2c);
+        hal_i2c_send(pi2c, data_buf, 2);
+        HAL_EXIT_CRITICAL_SECTION();
+    }
+    if(hal_i2c_wait_tx_completed(pi2c))
+        LOG("hx3690l write func invalid para!");
+    tyhx_i2c_deinit(pi2c);
+    return true;
 }
 
 uint8_t hx3690l_read_reg(uint8_t addr) 
 {
-    uint8_t data_buf;    
-    twi_pin_switch(1);
-    twi_master_transfer(0x88, &addr, 1, false);      //write
-    twi_master_transfer(0x89, &data_buf, 1, true);//read
-    return data_buf;      
+    uint8_t data_buf;
+    void* pi2c = tyhx_i2c_init();
+    hal_i2c_read(pi2c, HX3690_I2C_ADDR, addr, &data_buf, 1);
+    tyhx_i2c_deinit(pi2c);
+    return data_buf;
 }
 
 bool hx3690l_brust_read_reg(uint8_t addr , uint8_t *buf, uint8_t length) 
 {
-    twi_pin_switch(1);
-    twi_master_transfer(0x88, &addr, 1, false);      //write
-    twi_master_transfer(0x89, buf, length, true); //read
-    return true;      
+    void* pi2c = tyhx_i2c_init();
+    hal_i2c_read(pi2c, HX3690_I2C_ADDR, addr, buf, length);
+    tyhx_i2c_deinit(pi2c);
+    return true;
 }
+
 uint8_t chip_id = 0;
 bool hx3690l_chip_check(void)
 {
-    
+    chip_id = hx3690l_read_reg(0x00);
+    chip_id = hx3690l_read_reg(0x00);
+    chip_id = hx3690l_read_reg(0x00);
+    chip_id = hx3690l_read_reg(0x00);
+    chip_id = hx3690l_read_reg(0x00);
+    chip_id = hx3690l_read_reg(0x00);
+    chip_id = hx3690l_read_reg(0x00);
+    chip_id = hx3690l_read_reg(0x00);
 
-    chip_id = hx3690l_read_reg(0x00);
-    chip_id = hx3690l_read_reg(0x00);
-    chip_id = hx3690l_read_reg(0x00);
-    chip_id = hx3690l_read_reg(0x00);
-    chip_id = hx3690l_read_reg(0x00);
-    chip_id = hx3690l_read_reg(0x00);
-    chip_id = hx3690l_read_reg(0x00);
-    chip_id = hx3690l_read_reg(0x00);
-    
     if (chip_id != 0x69)
     {
         return false;
     }
-    
+
     return true;
 }
+
 uint8_t hx3690l_read_fifo_size(void) // 20200615 ericy read fifo data number
 {
     uint8_t fifo_num_temp = 0;
@@ -165,7 +210,6 @@ uint8_t hx3690l_read_fifo_size(void) // 20200615 ericy read fifo data number
 
     return fifo_num_temp;
 }
-
 
 void hx3690l_ppg_off(void) // 20200615 ericy chip sleep enable
 {
@@ -311,8 +355,6 @@ void hx3690l_hrs_ppg_init(void) //20200615 ericy ppg fs=25hz, phase3 conversion 
 	hx3690l_delay(5);
 	hx3690l_write_reg(0X13, 0x31);	
     hx3690l_write_reg(0X51, 0x00);
-
-
 }
 #endif
 
@@ -449,9 +491,8 @@ void hx3690l_spo2_ppg_init(void) //20200615 ericy ppg fs=25hz, phase3 conversion
 	hx3690l_delay(5);
 	hx3690l_write_reg(0X13, 0x31);
     hx3690l_write_reg(0X51, 0x00);
-    
+
    // while(1);
-    
 }
 #endif
 
@@ -459,13 +500,14 @@ void hx3690l_320ms_timer_cfg(bool en)
 {
     if(en)
     {
-        hx3690_timers_start();
+        hr_timer_start(320);
     }
     else
     {
-        hx3690_timers_start();
+        hr_timer_stop();
     }
 }
+
 void hx3690l_40ms_timer_cfg(bool en)
 {
     if(en)
@@ -481,25 +523,25 @@ void hx3690l_40ms_timer_cfg(bool en)
         #endif 
     }
 }
+
 void hx3690l_gpioint_cfg(bool en)
 {
     if(en)
     {
-         hx3690_gpioint_enable();
+         hal_gpioin_register(P4, NULL, hx3690l_agc_Int_handle);
     }
     else
     {
-         hx3690_gpioint_disable();
+         hal_gpioin_unregister(P4);
     }
 }
 
-
 bool hx3690l_init(WORK_MODE_T mode)
 {
-    hx3690_gpioint_init();
+    hal_gpioin_register(P4, NULL, hx3690l_agc_Int_handle);
 
     work_mode_flag = mode;//HRS_MODE,SPO2_MODE
-    
+
     if(work_mode_flag == HRS_MODE)
     {
         #ifdef HRS_ALG_LIB
@@ -561,8 +603,9 @@ bool hx3690l_init(WORK_MODE_T mode)
     
     return true;
 }
+
 //I/O interrupt falling edge
-void hx3690l_agc_Int_handle(void)
+void hx3690l_agc_Int_handle(GPIO_Pin_e pin,IO_Wakeup_Pol_e type)
 {       
 #ifdef EXT_INT_AGC
     
@@ -585,7 +628,7 @@ void hx3690l_agc_Int_handle(void)
         #ifdef SPO2_ALG_LIB 
         SPO2_CAL_SET_T cal;
         cal = PPG_spo2_agc();
-        
+
         if(cal.work)
         {
             AGC_LOG("AGC. Rled_drv=%d,Irled_drv=%d,RledDac=%d,IrledDac=%d,ambDac=%d,Rledstep=%d,Irledstep=%d,Rrf=%d,Irrf=%d,\r\n",\
@@ -635,7 +678,7 @@ void gsen_read_timeout_handler(void * p_context)
 }
 
 //Timer interrupt 320ms repeat mode
-void heart_rate_meas_timeout_handler(void * p_context)
+void heart_rate_meas_timeout_handler(void)
 { 
     if(work_mode_flag == HRS_MODE)
     {
@@ -745,18 +788,13 @@ void hx3690l_hrs_ppg_Int_handle(void)
     #endif      
 
     //display part                                                                                                                 
-    alg_results = hx3690_alg_get_results();     
-    oled_dis.refresh_time++;
-    if(oled_dis.refresh_time > 3) //330ms*3 = 990ms ~ 1s
-    {
-        oled_dis.refresh_flag = 1;
-        oled_dis.refresh_time = 0;
-
-        oled_dis.dis_mode = DIS_HR;  
-        
-        oled_dis.dis_data = alg_results.hr_result;
-    }
-    //SEGGER_RTT_printf(0,"oledata: %d,oledstatus: %d\r\n", alg_results.hr_result,alg_results.alg_status);
+    alg_results = hx3690_alg_get_results();
+    hr_ev_t ev;
+    ev.ev = HR_EV_HR_VALUE;
+    ev.value = alg_results.hr_result;
+    ev.data = NULL;
+    hx3690lCB(&ev);
+    AGC_LOG("hr_result:%d, alg_status:%d\n", alg_results.hr_result, alg_results.hrs_alg_status);
 
     #ifdef HRS_BLE_APP
     {
@@ -834,7 +872,8 @@ void hx3690l_spo2_ppg_Int_handle(void)
     #endif      
 
     //display part
-    alg_results = hx3690_spo2_alg_get_results(); 
+    alg_results = hx3690_spo2_alg_get_results();
+#if 0
     oled_dis.refresh_time++;
     if(oled_dis.refresh_time > 3) //330ms*3 = 990ms ~ 1s
     {
@@ -843,6 +882,7 @@ void hx3690l_spo2_ppg_Int_handle(void)
         oled_dis.dis_mode = DIS_SPO2;
         oled_dis.dis_data = alg_results.spo2_result;
     }
+#endif
           
     //SEGGER_RTT_printf(0,"oledata: %d,oledstatus: %d\r\n", alg_results.hr_result,alg_results.alg_status);
 
@@ -915,10 +955,10 @@ void hx3690l_ft_hrs_Int_handle(void)
         s_buf[ii*4+3]);
     }
     ret = hx3693_factroy_test(HR_LEAK_LIGHT_TEST,*count,(int32_t *)PPG_buf,(int32_t *)ir_buf);  //yorke
-    SEGGER_RTT_printf(0,"HR_LEAK_LIGHT_TEST = %s\n", (ret==true)?"OK":"Fail");
+    AGC_LOG("HR_LEAK_LIGHT_TEST = %s\n", (ret==true)?"OK":"Fail");
     
     ret = hx3693_factroy_test(HR_GRAY_CARD_TEST,*count,(int32_t *)PPG_buf,(int32_t *)ir_buf);       
-    SEGGER_RTT_printf(0,"HR_GRAY_CARD_TEST = %s\n", (ret==true)?"OK":"Fail");
+    AGC_LOG("HR_GRAY_CARD_TEST = %s\n", (ret==true)?"OK":"Fail");
 }
 #endif
 
@@ -944,14 +984,15 @@ void hx3690l_ft_spo2_Int_handle(void)
         red_buf[ii],ir_buf[ii],s_buf[ii*3],s_buf[ii*3+1],s_buf[ii*3+2]);
     }
     ret = hx3693_factroy_test(SPO2_LEAK_LIGHT_TEST,*count,red_buf,ir_buf);
-    SEGGER_RTT_printf(0,"HR_LEAK_LIGHT_TEST = %s\n", (ret==true)?"OK":"Fail");
+    LOG("HR_LEAK_LIGHT_TEST = %s\n", (ret==true)?"OK":"Fail");
     
     ret = hx3693_factroy_test(SPO2_GRAY_CARD_TEST,*count,red_buf,ir_buf);       
-    SEGGER_RTT_printf(0,"HR_GRAY_CARD_TEST = %s\n", (ret==true)?"OK":"Fail");
+    LOG("HR_GRAY_CARD_TEST = %s\n", (ret==true)?"OK":"Fail");
     
 }
 #endif
 
+#if 0
 void display_refresh(void)
 {
     char dis_buf[]="0000";
@@ -998,6 +1039,7 @@ void display_refresh(void)
         }
     }
 }
+#endif
 
 #ifdef HRS_BLE_APP
 
@@ -1101,3 +1143,12 @@ uint32_t ble_rawdata_send_handler( )
 
 }
 #endif
+
+int hx3690l_register(hx3690lCB_t cb)
+{
+    hx3690l_init(HRS_MODE);
+
+    //hx3690l_ppg_off();
+    hx3690lCB = cb;
+	return PPlus_SUCCESS;
+}

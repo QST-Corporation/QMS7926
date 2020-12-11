@@ -16,7 +16,7 @@ typedef enum {
 	HR_GRAY_CARD_TEST = 2,
 	SPO2_LEAK_LIGHT_TEST = 3,
 	SPO2_GRAY_CARD_TEST = 4
-} TEST_MODE;
+} HX3693_TEST_MODE;
 
 
 void hx3693_hrs_factory_test_config(void);
@@ -32,7 +32,7 @@ uint8_t hx3690l_ft_spo2_read(spo2_sensor_data_t * s_dat);
 bool hx3693_factory_test_read(int32_t *phase1_data,int32_t *phase2_data,int32_t *phase3_data,int32_t *phase4_data);
 bool hx3693_factroy_test_old(uint32_t  test_mode);
 
-bool hx3693_factroy_test(TEST_MODE test_mode,uint8_t len,int32_t *ppg_buf,
+bool hx3693_factroy_test(HX3693_TEST_MODE test_mode,uint8_t len,int32_t *ppg_buf,
     int32_t *ir_buf);
 
 #endif // _HX3690L_FACTORY_TEST_H_

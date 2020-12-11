@@ -53,7 +53,8 @@
 #include "app_err.h"
 #include "battery.h"
 #include "led_light.h"
-#include "hrs3300.h"
+//#include "hrs3300.h"
+#include "hrs/hx3690l.h"
 #include "wristservice.h"
 #include "log.h"
 #include "error.h"
@@ -330,13 +331,15 @@ static int cmd_HR_get_status(const uint8_t* data, uint16_t len)
 }
 static int cmd_HR_start(const uint8_t* data, uint16_t len)
 {
-  Hrs3300_chip_enable();
-  Hrs3300_alg_open();
+  //Hrs3300_chip_enable();
+  //Hrs3300_alg_open();
+  hx3690l_init(HRS_MODE);
   return cmd_response_err(data, len, APP_ERR_NOT_IMPLEMENTED);
 }
 static int cmd_HR_stop(const uint8_t* data, uint16_t len)
 {
-  Hrs3300_chip_disable();
+  //Hrs3300_chip_disable();
+  hx3690l_ppg_off();
   return cmd_response_err(data, len, APP_SUCCESS);
 }
 
