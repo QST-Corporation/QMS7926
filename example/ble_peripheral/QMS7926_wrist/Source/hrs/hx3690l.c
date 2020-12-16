@@ -183,6 +183,18 @@ bool hx3690l_brust_read_reg(uint8_t addr , uint8_t *buf, uint8_t length)
     return true;
 }
 
+void hx3690l_LEDpower_cfg(bool en)
+{
+    if(en)
+    {
+        hal_gpio_write(P18,1);
+    }
+    else
+    {
+        hal_gpio_write(P18,0);
+    }
+}
+
 uint8_t chip_id = 0;
 bool hx3690l_chip_check(void)
 {
@@ -214,6 +226,7 @@ uint8_t hx3690l_read_fifo_size(void) // 20200615 ericy read fifo data number
 void hx3690l_ppg_off(void) // 20200615 ericy chip sleep enable
 {
     hx3690l_write_reg(0x02, 0x31);
+    hx3690l_LEDpower_cfg(false); //power off LED VBAT.
 }
 
 void hx3690l_ppg_on(void)
@@ -539,6 +552,8 @@ void hx3690l_gpioint_cfg(bool en)
 bool hx3690l_init(WORK_MODE_T mode)
 {
     hal_gpioin_register(P4, NULL, hx3690l_agc_Int_handle);
+    hal_gpio_pin_init(P18, OEN);
+    hx3690l_LEDpower_cfg(true); //power on LED VBAT.
 
     work_mode_flag = mode;//HRS_MODE,SPO2_MODE
 
