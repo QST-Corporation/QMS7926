@@ -207,6 +207,7 @@ bool hx3690l_chip_check(void)
     chip_id = hx3690l_read_reg(0x00);
     chip_id = hx3690l_read_reg(0x00);
 
+    AGC_LOG("readout hx3690l id: 0x%X\n", chip_id);
     if (chip_id != 0x69)
     {
         return false;
@@ -225,6 +226,7 @@ uint8_t hx3690l_read_fifo_size(void) // 20200615 ericy read fifo data number
 
 void hx3690l_ppg_off(void) // 20200615 ericy chip sleep enable
 {
+    hx3690l_320ms_timer_cfg(false); //stop measurement timer
     hx3690l_write_reg(0x02, 0x31);
     hx3690l_LEDpower_cfg(false); //power off LED VBAT.
 }
@@ -694,7 +696,9 @@ void gsen_read_timeout_handler(void * p_context)
 
 //Timer interrupt 320ms repeat mode
 void heart_rate_meas_timeout_handler(void)
-{ 
+{
+    hx3690l_320ms_timer_cfg(true); //reload 320ms timer.
+
     if(work_mode_flag == HRS_MODE)
     {
         #ifdef HRS_ALG_LIB
@@ -1161,7 +1165,7 @@ uint32_t ble_rawdata_send_handler( )
 
 int hx3690l_register(hx3690lCB_t cb)
 {
-    hx3690l_init(HRS_MODE);
+    //hx3690l_init(HRS_MODE);
 
     //hx3690l_ppg_off();
     hx3690lCB = cb;
