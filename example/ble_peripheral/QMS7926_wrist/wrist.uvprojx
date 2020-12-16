@@ -599,14 +599,14 @@
               <FilePath>.\Source\hrs\hx3690l_spo2_agc.c</FilePath>
             </File>
             <File>
-              <FileName>m0_keil_3690Q_20201207_V03_01d.lib</FileName>
-              <FileType>4</FileType>
-              <FilePath>.\Source\hrs\m0_keil_3690Q_20201207_V03_01d.lib</FilePath>
-            </File>
-            <File>
               <FileName>hx3690q_factory_test.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Source\hrs\hx3690q_factory_test.c</FilePath>
+            </File>
+            <File>
+              <FileName>m0_keil_3690Q_20201215_V03_02d.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>.\Source\hrs\m0_keil_3690Q_20201215_V03_02d.lib</FilePath>
             </File>
           </Files>
         </Group>

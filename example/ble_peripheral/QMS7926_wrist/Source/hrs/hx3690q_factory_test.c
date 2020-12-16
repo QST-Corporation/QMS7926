@@ -167,14 +167,14 @@ void hx3693_spo2_factory_test_config(void)
     //red
     uint8_t phase1_inner_avg = 0;   /* phase1 adc avg num 0=1, 1=2, 2=4, 3=8 , 4=16*/
     uint8_t phase1_tia_res = 0;     /* 0= 10K; 1= 20k; 2= 50k; 3= 100k; 4= 150k; 5= 200k; 6= 500k; 7= 1M*/
-    uint8_t phase1_ldr_sel = 1;     /*ball led 1 = ldr1(red); 2 = ldr2(ir); 4 = ldr3(green); 8 = ldr4 ;
+    uint8_t phase1_ldr_sel = 2;     /*ball led 1 = ldr1(red); 2 = ldr2(ir); 4 = ldr3(green); 8 = ldr4 ;
                                     * 3in1 led 1 = ldr1(red); 2 = ldr2(green); 4 = ldr3(ir); 8 = ldr4 ;
                                       laisi led 1 = ldr1(green); 2 = ldr2(red); 4 = ldr3(ir); 8 = ldr4 ;
                                     */
     uint8_t phase1_pd_sel = 1;      /* 1 = pd1; 2 = pd2; */
     uint8_t phase1_offset_idac = 0; /* 0~127 = 0 ~ 32ua , step = 0.25ua */
     uint8_t phase1_ldr_cur = 64;     /* 0~255 = 0 ~ 200ma, step = 0.8ma */
-    uint8_t phase1_led_en = 0;      /* phase1 led enable*/
+    uint8_t phase1_led_en = 1;      /* phase1 led enable*/
     //no use
     uint8_t phase2_inner_avg = 0;   /* phase2 adc avg num 0=1, 1=2, 2=4, 3=8 , 4=16*/
     uint8_t phase2_tia_res = 0;     /* 0= 10K; 1= 20k; 2= 50k; 3= 100k; 4= 150k; 5= 200k; 6= 500k; 7= 1M*/
@@ -194,7 +194,7 @@ void hx3693_spo2_factory_test_config(void)
     //ir
     uint8_t phase4_inner_avg = 0;   /* phase4 adc avg num 0=1, 1=2, 2=4, 3=8 , 4=16*/
     uint8_t phase4_tia_res = 0;     /* 0= 10K; 1= 20k; 2= 50k; 3= 100k; 4= 150k; 5= 200k; 6= 500k; 7= 1M*/
-    uint8_t phase4_ldr_sel = 2;     /* 1 = ldr1; 2 = ldr2; 4 = ldr3; 8 = ldr4 ; */
+    uint8_t phase4_ldr_sel = 4;     /* 1 = ldr1; 2 = ldr2; 4 = ldr3; 8 = ldr4 ; */
     uint8_t phase4_pd_sel = 1;      /* 1 = pd1; 2 = pd2; 4 = pd3; */
     uint8_t phase4_offset_idac = 0; /* 0~127 = 0 ~ 32ua , step = 0.25ua */
     uint8_t phase4_ldr_cur = 64;     /* 0~255 = 0 ~ 200ma, step = 0.8ma */
