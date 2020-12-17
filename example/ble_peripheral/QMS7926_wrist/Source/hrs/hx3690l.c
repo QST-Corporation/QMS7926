@@ -556,6 +556,7 @@ bool hx3690l_init(WORK_MODE_T mode)
     hal_gpioin_register(P4, NULL, hx3690l_agc_Int_handle);
     hal_gpio_pin_init(P18, OEN);
     hx3690l_LEDpower_cfg(true); //power on LED VBAT.
+    hx3690l_ppg_on();
 
     work_mode_flag = mode;//HRS_MODE,SPO2_MODE
 

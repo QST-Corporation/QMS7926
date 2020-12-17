@@ -331,15 +331,13 @@ static int cmd_HR_get_status(const uint8_t* data, uint16_t len)
 }
 static int cmd_HR_start(const uint8_t* data, uint16_t len)
 {
-  //Hrs3300_chip_enable();
-  //Hrs3300_alg_open();
   hx3690l_init(HRS_MODE);
   return cmd_response_err(data, len, APP_ERR_NOT_IMPLEMENTED);
 }
 static int cmd_HR_stop(const uint8_t* data, uint16_t len)
 {
-  //Hrs3300_chip_disable();
-  hx3690l_ppg_off();
+  //hx3690l_ppg_off();
+  hx3690l_hrs_disable();
   return cmd_response_err(data, len, APP_SUCCESS);
 }
 
