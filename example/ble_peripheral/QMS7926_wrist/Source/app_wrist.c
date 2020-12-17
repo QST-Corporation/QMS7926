@@ -240,6 +240,11 @@ static void on_HeartRateValueUpdate(hr_ev_t* pev)
       wristProfileResponseHRRawData(pev->value, pev->data);
     }
     break;
+  case HR_EV_SPO2_VALUE:
+    {
+      wristProfileResponseSPO2Value(pev->value);
+    }
+    break;
   default:
     break;
   }

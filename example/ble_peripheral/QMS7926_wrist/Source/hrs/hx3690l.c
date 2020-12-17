@@ -893,7 +893,15 @@ void hx3690l_spo2_ppg_Int_handle(void)
 
     //display part
     alg_results = hx3690_spo2_alg_get_results();
-#if 0
+#if 1
+    hr_ev_t ev;
+    ev.ev = HR_EV_SPO2_VALUE;
+    ev.value = alg_results.spo2_result;
+    ev.data = NULL;
+    hx3690lCB(&ev);
+    AGC_LOG("spo2_result:%d, spo2_alg_status:%d\n", alg_results.spo2_result, alg_results.spo2_alg_status);
+
+#else
     oled_dis.refresh_time++;
     if(oled_dis.refresh_time > 3) //330ms*3 = 990ms ~ 1s
     {

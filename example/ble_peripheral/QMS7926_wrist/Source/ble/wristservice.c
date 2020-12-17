@@ -329,15 +329,30 @@ static int cmd_HR_get_status(const uint8_t* data, uint16_t len)
 
   return cmd_response_err(data, len, 0);
 }
+
 static int cmd_HR_start(const uint8_t* data, uint16_t len)
 {
   hx3690l_init(HRS_MODE);
   return cmd_response_err(data, len, APP_ERR_NOT_IMPLEMENTED);
 }
+
 static int cmd_HR_stop(const uint8_t* data, uint16_t len)
 {
   //hx3690l_ppg_off();
   hx3690l_hrs_disable();
+  return cmd_response_err(data, len, APP_SUCCESS);
+}
+
+static int cmd_SPO2_start(const uint8_t* data, uint16_t len)
+{
+  hx3690l_init(SPO2_MODE);
+  return cmd_response_err(data, len, APP_SUCCESS);
+}
+
+static int cmd_SPO2_stop(const uint8_t* data, uint16_t len)
+{
+  //hx3690l_ppg_off();
+  hx3690l_spo2_disable();
   return cmd_response_err(data, len, APP_SUCCESS);
 }
 
@@ -528,6 +543,12 @@ int on_recieved_cmd_packet(const uint8* data, uint16 len)
   case  WRIST_CMD_HR_STOP:
     ret = cmd_HR_stop(data, len);
     break;
+  case  WRIST_CMD_SPO2_START:
+    ret = cmd_SPO2_start(data, len);
+    break;
+  case  WRIST_CMD_SPO2_STOP:
+    ret = cmd_SPO2_stop(data, len);
+    break;
 
   case  WRIST_CMD_ACC_NOTIF_START:
     ret = cmd_acc_notif_start(data, len);
@@ -624,7 +645,16 @@ int wristProfileResponseHRRawData(uint8_t cnt, uint16_t* pdata)
   memcpy(rawdata.raw, pdata, cnt*2);
   rawdata.chksum = checksum((uint8*)(&rawdata), sizeof(rawdata)-1);
   return cmd_response((uint8*)(&rawdata), sizeof(rawdata));
+}
 
+int wristProfileResponseSPO2Value(uint8_t SPO2_Value)
+{
+  wristRspHrValue_t value;
+  value.cmd = WRIST_NOTIFY_SPO2;
+  value.csn = 0;
+  value.value = SPO2_Value;
+  value.chksum = checksum((uint8*)(&value), sizeof(value)-1);
+  return cmd_response((uint8*)(&value), sizeof(value));
 }
 
 /*acc_value: 1000 == 1G*/

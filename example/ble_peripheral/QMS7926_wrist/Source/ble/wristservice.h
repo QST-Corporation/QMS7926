@@ -121,16 +121,18 @@ enum{
   WRIST_CMD_HR_GET_STATUS		= 0x20,
   WRIST_CMD_HR_START			  = 0x21,
   WRIST_CMD_HR_STOP			    = 0x22,
-  WRIST_CMD_ACC_NOTIF_START = 0x23,
-  WRIST_CMD_ACC_NOTIF_STOP  = 0x24,
+  WRIST_CMD_SPO2_START      = 0x23,
+  WRIST_CMD_SPO2_STOP       = 0x24,
+  WRIST_CMD_ACC_NOTIF_START = 0x30,
+  WRIST_CMD_ACC_NOTIF_STOP  = 0x31,
 
-	WRIST_CMD_LIGHT_CTRL			= 0x30,
+	WRIST_CMD_LIGHT_CTRL			= 0x37,
 	
 	WRIST_CMD_MSG_NOTIF				= 0x38,
 	
 	//WRIST_NOTIFY_FIT			= 0x80,
 	WRIST_NOTIFY_HR				  = 0x81,
-	//WRIST_NOTIFY_ATH			= 0x82,
+	WRIST_NOTIFY_SPO2       = 0x82,
 	//WRIST_NOTIFY_UV				= 0x83,
 	//WRIST_NOTIFY_ENV			= 0x84,
 	WRIST_NOTIFY_HR_RAW			= 0x85,
@@ -275,6 +277,7 @@ typedef void (*wristServiceCB_t)(uint8 event, uint8 param_len, uint8* param);
 
 extern int wristProfileResponseHRValue(uint8_t HR_Value);
 extern int wristProfileResponseHRRawData(uint8_t cnt, uint16_t* pdata);
+int wristProfileResponseSPO2Value(uint8_t SPO2_Value);
 extern int wristProfileResponseAccelerationData(int gx, int gy, int gz);
 extern int wristProfileResponseKScan(uint8_t num, uint8_t* key);
 

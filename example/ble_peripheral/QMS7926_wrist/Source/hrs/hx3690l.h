@@ -28,9 +28,9 @@
 
 #define HRS_DEBUG
 #ifdef HRS_DEBUG
-#define  DEBUG_PRINTF(...)     LOG(__VA_ARGS__)
+#define  DEBUG_PRINTF(port,...)     LOG(##__VA_ARGS__)
 #else
-#define	 DEBUG_PRINTF(...)
+#define	 DEBUG_PRINTF(port,...)
 #endif
 
 
@@ -102,16 +102,16 @@ typedef struct {
 }hrs_sensor_data_t;
 
 typedef enum {
-	MSG_HRS_NO_WEAR,
-	MSG_HRS_WEAR
+    MSG_HRS_NO_WEAR,
+    MSG_HRS_WEAR
 } hx3690_hrs_wear_msg_code_t;
 typedef enum {
-	MSG_HRS_ALG_NOT_OPEN,
+    MSG_HRS_ALG_NOT_OPEN,
     MSG_HRS_ALG_OPEN,
     MSG_HRS_ALG_OPEN_DEEP,
-	MSG_HRS_READY,
-	MSG_HRS_ALG_TIMEOUT,
-	MSG_HRS_SETTLE
+    MSG_HRS_READY,
+    MSG_HRS_ALG_TIMEOUT,
+    MSG_HRS_SETTLE
 } hx3690_hrs_alg_msg_code_t;
 
 typedef struct {
@@ -124,16 +124,16 @@ typedef struct {
 } hx3690_results_t;
 
 typedef enum {
-	MSG_SPO2_NO_WEAR,
-	MSG_SPO2_WEAR
+    MSG_SPO2_NO_WEAR,
+    MSG_SPO2_WEAR
 } hx3690_spo2_wear_msg_code_t;
 typedef enum {
-	MSG_SPO2_ALG_NOT_OPEN,
+    MSG_SPO2_ALG_NOT_OPEN,
     MSG_SPO2_ALG_OPEN,
     MSG_SPO2_ALG_OPEN_DEEP,
-	MSG_SPO2_READY,
-	MSG_SPO2_ALG_TIMEOUT,
-	MSG_SPO2_SETTLE
+    MSG_SPO2_READY,
+    MSG_SPO2_ALG_TIMEOUT,
+    MSG_SPO2_SETTLE
 } hx3690_spo2_alg_msg_code_t;
 
 typedef struct {
@@ -216,15 +216,16 @@ extern uint8_t alg_ram[13*1024];
 #endif
 
 enum{
-  HR_EV_HR_VALUE = 1,
-  HR_EV_RAW_DATA
+    HR_EV_HR_VALUE = 1,
+    HR_EV_RAW_DATA,
+    HR_EV_SPO2_VALUE
 };
 
 typedef struct
 {
-  uint8_t   ev;
-  uint8_t   value;
-  uint16_t*  data;
+    uint8_t   ev;
+    uint8_t   value;
+    uint16_t*  data;
 }hr_ev_t;
 
 typedef void(* hx3690lCB_t)(hr_ev_t* pev);
