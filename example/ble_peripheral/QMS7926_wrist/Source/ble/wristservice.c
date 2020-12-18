@@ -261,6 +261,7 @@ static void print_hex (const uint8 *data, uint16 len)
 static int cmd_query_version(const uint8* data)
 {
   wristRspVersion_t version;
+  memset((uint8*)(&version), 0x00, sizeof(version));
   version.cmd = data[0];  //cmd
   version.csn = data[1];  //csn
   version.ver_fw[0] = 1;//FW_VER_MAJOR;
