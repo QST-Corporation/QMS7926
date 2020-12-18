@@ -395,7 +395,7 @@ void appWristInit( uint8 task_id )
 //  light_ctrl(1,0);
 //  light_ctrl(2,0);
   hx3690l_register(on_HeartRateValueUpdate);
-  batt_init();
+  //batt_init();
 	QMA7981_init(on_QMA7981_evt);
   {
 //    kscan_Cfg_t kcfg;
