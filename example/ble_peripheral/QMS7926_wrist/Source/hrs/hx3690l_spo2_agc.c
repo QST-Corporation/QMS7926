@@ -121,9 +121,12 @@ bool  hx3690_spo2_change_to_wear(WORK_MODE_T mode,int32_t infrared_data)
         }
         if(spo2_wear_status_pre != MSG_SPO2_WEAR)
         {
+            AGC_LOG("hx3690_spo2_check_wear ir = %d\r\n", infrared_data);
             spo2_wear_status_pre = MSG_SPO2_WEAR;
             hx3690_spo2_alg_open_deep();
             return true;
+            //hx3690l_spo2_set_mode(PPG_INIT);
+            //hx3690l_spo2_set_mode(CAL_INIT);
         }  
     }
     
@@ -548,8 +551,6 @@ void hx3690l_spo2_set_mode(uint8_t mode_cmd)
             Init_Spo2_PPG_Calibration_Routine(&calReg,64);
             hx3690l_spo2_cal_init();
             hx3690l_spo2_updata_reg();
-            hx3690l_320ms_timer_cfg(false);
-            hx3690l_40ms_timer_cfg(false);
             hx3690l_gpioint_cfg(true);
         
             s_cal_state = 1;
@@ -559,8 +560,6 @@ void hx3690l_spo2_set_mode(uint8_t mode_cmd)
             Restart_Spo2_PPG_Calibration_Routine(&calReg);
             hx3690l_spo2_cal_init();
             hx3690l_spo2_updata_reg();
-            hx3690l_320ms_timer_cfg(false);
-            hx3690l_40ms_timer_cfg(false);
             hx3690l_gpioint_cfg(true);
         
             s_cal_state = 1;
@@ -569,8 +568,6 @@ void hx3690l_spo2_set_mode(uint8_t mode_cmd)
 
         case CAL_OFF:
             hx3690l_gpioint_cfg(false);
-            hx3690l_320ms_timer_cfg(true);
-            hx3690l_40ms_timer_cfg(true);
             hx3690l_spo2_cal_off();
             s_cal_state = 0;
             AGC_LOG("cal off mode\r\n");
@@ -613,7 +610,12 @@ SENSOR_ERROR_T hx3690l_spo2_enable(void)
 
 void hx3690l_spo2_disable(void)
 {
+    hx3690l_gpioint_cfg(false);
+    hx3690l_320ms_timer_cfg(false);
+    hx3690l_40ms_timer_cfg(false); 
+
     hx3690l_spo2_set_mode(PPG_OFF);
+    hx3690_spo2_alg_close();    
 
     AGC_LOG("hx3690l disable!\r\n");
 }
@@ -752,20 +754,21 @@ uint8_t hx3690l_spo2_read(spo2_sensor_data_t * s_dat)
                 }
 
             }
-            
 
             red_buf[i] = Red_src_data;
             ir_buf[i] = Ir_src_data;
-            
+
+            //hx3690_spo2_check_wear(SPO2_MODE,Ir_src_data);
+
             //DEBUG_PRINTF(0,"%d/%d %d %d %d %d %d %d %d %d %d\r\n" ,1+i,size,\
             red_buf[i],ir_buf[i],s_buf[i*3],s_buf[i*3+1],s_buf[i*3+2],\
             calReg.R_LED,calReg.IR_LED,calReg.red_idac,calReg.ir_idac);
-            
+
             if (s_buf[i*3+1] != 0)  // �����ⲻ��Ϊ0�� ��ֹ���ݴ�λ��������
             {
 	            if (hx3690_spo2_change_to_wear(SPO2_MODE,Ir_src_data))
 	            {
-	            		return NULL;
+                  return 0;
 	            }
             }
             

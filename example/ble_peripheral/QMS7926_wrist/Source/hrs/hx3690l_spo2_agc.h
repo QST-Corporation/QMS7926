@@ -2,7 +2,6 @@
 #define _HX3690L_SPO2_AGC_H_
 #include <stdint.h>
 #include <stdbool.h>
-#include "hx3690l.h"
 
 #define CAL_DELAY_COUNT (8)
 
@@ -57,7 +56,6 @@ hx3690_spo2_wear_msg_code_t hx3690_spo2_get_wear_status(void);
 uint8_t hx3690l_spo2_read(spo2_sensor_data_t * s_dat);
 hx3690_spo2_wear_msg_code_t hx3690_spo2_check_unwear(WORK_MODE_T mode,int32_t infrared_data);
 hx3690_spo2_wear_msg_code_t hx3690_spo2_check_wear(WORK_MODE_T mode,int32_t infrared_data);
-bool  hx3690_spo2_change_to_wear(WORK_MODE_T mode,int32_t infrared_data);
 SPO2_CAL_SET_T get_spo2_agc_status(void);
 
 

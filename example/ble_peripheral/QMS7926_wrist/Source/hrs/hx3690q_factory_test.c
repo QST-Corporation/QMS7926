@@ -282,6 +282,7 @@ void hx3690l_ft_hrs_read_fifo_data(uint8_t read_fifo_size,int32_t *buf)
     for(ii=0; ii<read_fifo_size; ii++) 
     {
         hx3690l_write_reg(0x17, 0x00); // write any walue to 0x17 will update a new data
+        hx3690l_delay_us(100);
         databuf[2]=hx3690l_read_reg(0x17);
         databuf[1]=hx3690l_read_reg(0x16);
         databuf[0]=hx3690l_read_reg(0x15);
@@ -367,17 +368,7 @@ uint8_t hx3690l_ft_hrs_read(hrs_sensor_data_t * s_dat)
             PPG_src_data = s_buf[i*4] - s_buf[i*4+1];
             Ir_src_data = s_buf[i*4+2] - s_buf[i*4+3];            
 
-            
-            if (PPG_src_data > 524287) 
-            {
-                PPG_src_data = 524287;
-            } 
-            else if (PPG_src_data < -524288) 
-            {
-                PPG_src_data = -524288;
-            }
-
-            PPG_buf[i] = PPG_src_data+524288;
+            PPG_buf[i] = PPG_src_data+1047600;
             ir_buf[i] = Ir_src_data;
 
             //AGC_LOG("%d/%d %d %d %d %d %d %d %d\r\n" ,1+i,size,   \
@@ -399,6 +390,7 @@ void hx3690l_ft_spo2_read_fifo_data(uint8_t read_fifo_size,int32_t *buf)
     for(ii=0; ii<read_fifo_size; ii++) 
     {
         hx3690l_write_reg(0x17, 0x00); // write any walue to 0x17 will update a new data
+        hx3690l_delay_us(100);
         databuf[2]=hx3690l_read_reg(0x17);
         databuf[1]=hx3690l_read_reg(0x16);
         databuf[0]=hx3690l_read_reg(0x15);
@@ -467,22 +459,12 @@ uint8_t hx3690l_ft_spo2_read(spo2_sensor_data_t * s_dat)
     
     if (size_byte && size_byte <= 64) 
     {
-        hx3690l_ft_hrs_read_fifo_data(size_byte,s_buf);
+        hx3690l_ft_spo2_read_fifo_data(size_byte,s_buf);
        
         for (i=0; i<size; i++) 
         {
             Red_src_data = s_buf[i*3] - s_buf[i*3+1];
             Ir_src_data = s_buf[i*3+2] - s_buf[i*3+1];
-
-            
-            if (Red_src_data > 523800) 
-            {
-                Red_src_data = 523800;
-            } 
-            else if (Red_src_data < -523800) 
-            {
-                Red_src_data = -523800;
-            }
 
             red_buf[i] = Red_src_data;
             ir_buf[i] = Ir_src_data;

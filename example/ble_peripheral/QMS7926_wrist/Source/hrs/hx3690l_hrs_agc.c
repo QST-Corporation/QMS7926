@@ -245,7 +245,7 @@ HRS_CAL_SET_T PPG_hrs_agc(void)
         hx3690l_hrs_updata_reg();
 		hx3690l_gpioint_cfg(true);
     }
-    hx3690l_gpioint_cfg(true);
+    //hx3690l_gpioint_cfg(true);
     return  calReg;
 }
 
@@ -447,8 +447,6 @@ void hx3690l_hrs_set_mode(uint8_t mode_cmd)
             Init_hrs_PPG_Calibration_Routine(&calReg, 64);
             hx3690l_hrs_cal_init();
             hx3690l_hrs_updata_reg();
-            hx3690l_320ms_timer_cfg(false);
-            hx3690l_40ms_timer_cfg(false);
             hx3690l_gpioint_cfg(true);
             s_cal_state = 1;
             AGC_LOG("cal init mode\r\n");   
@@ -457,8 +455,6 @@ void hx3690l_hrs_set_mode(uint8_t mode_cmd)
             Restart_hrs_PPG_Calibration_Routine(&calReg);
             hx3690l_hrs_cal_init();
             hx3690l_hrs_updata_reg();
-            hx3690l_320ms_timer_cfg(false);
-            hx3690l_40ms_timer_cfg(false);
             hx3690l_gpioint_cfg(true);
             s_cal_state = 1;
             AGC_LOG("Recal init mode\r\n");
@@ -466,8 +462,6 @@ void hx3690l_hrs_set_mode(uint8_t mode_cmd)
 
         case CAL_OFF:
             hx3690l_gpioint_cfg(false);
-            hx3690l_320ms_timer_cfg(true);
-            hx3690l_40ms_timer_cfg(true);
             hx3690l_hrs_cal_off(0);
             s_cal_state = 0;
             AGC_LOG("cal off mode\r\n");
@@ -511,7 +505,12 @@ SENSOR_ERROR_T hx3690l_hrs_enable(void)
 
 void hx3690l_hrs_disable(void)
 {
+    hx3690l_gpioint_cfg(false);
+    hx3690l_320ms_timer_cfg(false);
+    hx3690l_40ms_timer_cfg(false);
+
     hx3690l_hrs_set_mode(PPG_OFF);
+    hx3690_alg_close();
 
     AGC_LOG("hx3690l disable!\r\n");
 }

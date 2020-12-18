@@ -85,7 +85,7 @@ int16_t gen_dummy[64] = {0};
 WORK_MODE_T work_mode_flag = HRS_MODE;
 //////// para and switches
 const  uint8_t   COUNT_BLOCK_NUM = 50;            // delay the block of some single good signal after a series of bad signal 
-const  uint8_t   SPO2_LOW_XCORR_THRE = 40;        //(64*xcorr)'s square below this threshold, means error signal
+const  int32_t   SPO2_LOW_XCORR_THRE = 40;        //(64*xcorr)'s square below this threshold, means error signal
 const  int32_t   XCORR_MODE = 1;                  //xcorr mode switch
 const  int32_t   QUICK_RESULT = 1;                //come out the spo2 result quickly ;0 is normal,1 is quick
 const  int32_t   MEAN_NUM = 256;                  // the length of smooth-average ;the value of MEAN_NUM can be given only 256 and 512
@@ -198,22 +198,25 @@ void hx3690l_LEDpower_cfg(bool en)
 uint8_t chip_id = 0;
 bool hx3690l_chip_check(void)
 {
-    chip_id = hx3690l_read_reg(0x00);
-    chip_id = hx3690l_read_reg(0x00);
-    chip_id = hx3690l_read_reg(0x00);
-    chip_id = hx3690l_read_reg(0x00);
-    chip_id = hx3690l_read_reg(0x00);
-    chip_id = hx3690l_read_reg(0x00);
-    chip_id = hx3690l_read_reg(0x00);
-    chip_id = hx3690l_read_reg(0x00);
+    uint8_t i = 0;
 
-    AGC_LOG("readout hx3690l id: 0x%X\n", chip_id);
-    if (chip_id != 0x69)
+    for(i=0;i<10;i++)
     {
-        return false;
+        hx3690l_write_reg(0x02, 0x30);
+        hx3690l_delay(5);
+        chip_id = hx3690l_read_reg(0x00);
+        AGC_LOG("readout hx3690l id: 0x%X\n", chip_id);
+        if (chip_id == 0x69)
+        {
+            AGC_LOG("r0x3E =0x%x\r\n",hx3690l_read_reg(0x3e));
+            AGC_LOG("r0x3F =0x%x\r\n",hx3690l_read_reg(0x3f));
+            AGC_LOG("r0x40 =0x%x\r\n",hx3690l_read_reg(0x40));
+            AGC_LOG("r0x41 =0x%x\r\n",hx3690l_read_reg(0x41));
+            return true;
+        }
     }
 
-    return true;
+    return false;
 }
 
 uint8_t hx3690l_read_fifo_size(void) // 20200615 ericy read fifo data number
@@ -226,7 +229,6 @@ uint8_t hx3690l_read_fifo_size(void) // 20200615 ericy read fifo data number
 
 void hx3690l_ppg_off(void) // 20200615 ericy chip sleep enable
 {
-    hx3690l_320ms_timer_cfg(false); //stop measurement timer
     hx3690l_write_reg(0x02, 0x31);
     hx3690l_LEDpower_cfg(false); //power off LED VBAT.
 }
@@ -305,9 +307,11 @@ void hx3690l_hrs_ppg_init(void) //20200615 ericy ppg fs=25hz, phase3 conversion 
 
     uint8_t led_on_time = 3;      /* 0 = 32clk=8us ; 1 = 64clk=16us; 2=128clk=32us ; 3 = 256clk=64us ;
                                      4 = 512clk=128us ; 5 = 1024clk=256us; 6= 2048clk=512us; 7 = 4096clk=1024us */
-
+    hx3690l_write_reg(0x02, 0x30);
+    hx3690l_delay(5);
     hx3690l_write_reg(0X6a, 0X00);	//rest int
-    hx3690l_delay(10);
+    hx3690l_delay(5);
+
     hx3690l_write_reg(0X1a, (uint8_t)prf_clk_num);    // prf bit<7:0>
     hx3690l_write_reg(0X1b, (uint8_t)(prf_clk_num>>8)); // prf bit<15:8>
     hx3690l_write_reg(0X1c, (uint8_t)(prf_clk_num>>16)); // prf bit<23:16>
@@ -442,8 +446,11 @@ void hx3690l_spo2_ppg_init(void) //20200615 ericy ppg fs=25hz, phase3 conversion
     uint8_t led_on_time = 5;      /* 0 = 32clk=8us ; 1 = 64clk=16us; 2=128clk=32us ; 3 = 256clk=64us ;
                                      4 = 512clk=128us ; 5 = 1024clk=256us; 6= 2048clk=512us; 7 = 4096clk=1024us */
 
+    hx3690l_write_reg(0x02, 0x30);
+    hx3690l_delay(5);
     hx3690l_write_reg(0X6a, 0X00);	//rest int
-    hx3690l_delay(10);
+    hx3690l_delay(5);
+
     hx3690l_write_reg(0X1a, (uint8_t)prf_clk_num);    // prf bit<7:0>
     hx3690l_write_reg(0X1b, (uint8_t)(prf_clk_num>>8)); // prf bit<15:8>
     hx3690l_write_reg(0X1c, (uint8_t)(prf_clk_num>>16)); // prf bit<23:16>
@@ -534,7 +541,7 @@ void hx3690l_40ms_timer_cfg(bool en)
     else
     {
         #if defined(GSENSER_DATA)||!defined(EXT_INT_AGC)  
-        gsen_read_timers_start();   
+        gsen_read_timers_stop();   
         #endif 
     }
 }
@@ -556,7 +563,6 @@ bool hx3690l_init(WORK_MODE_T mode)
     hal_gpioin_register(P4, NULL, hx3690l_agc_Int_handle);
     hal_gpio_pin_init(P18, OEN);
     hx3690l_LEDpower_cfg(true); //power on LED VBAT.
-    hx3690l_ppg_on();
 
     work_mode_flag = mode;//HRS_MODE,SPO2_MODE
 
@@ -956,7 +962,7 @@ void hx3690l_wear_ppg_Int_handle(void)
     AGC_LOG("ir_data =%d\r\n" ,ir); 
     alg_results.spo2_wear_status = hx3690_spo2_check_unwear(WEAR_MODE,ir);
     alg_results.spo2_wear_status = hx3690_spo2_check_wear(WEAR_MODE,ir);  
-    AGC_LOG("alg_results.hrs_wear_status =%d\r\n" ,alg_results.spo2_wear_status 
+    AGC_LOG("alg_results.hrs_wear_status =%d\r\n" ,alg_results.spo2_wear_status); 
 #endif
 }
 
@@ -1012,10 +1018,10 @@ void hx3690l_ft_spo2_Int_handle(void)
         red_buf[ii],ir_buf[ii],s_buf[ii*3],s_buf[ii*3+1],s_buf[ii*3+2]);
     }
     ret = hx3693_factroy_test(SPO2_LEAK_LIGHT_TEST,*count,red_buf,ir_buf);
-    LOG("HR_LEAK_LIGHT_TEST = %s\n", (ret==true)?"OK":"Fail");
+    AGC_LOG("HR_LEAK_LIGHT_TEST = %s\n", (ret==true)?"OK":"Fail");
     
     ret = hx3693_factroy_test(SPO2_GRAY_CARD_TEST,*count,red_buf,ir_buf);       
-    LOG("HR_GRAY_CARD_TEST = %s\n", (ret==true)?"OK":"Fail");
+    AGC_LOG("HR_GRAY_CARD_TEST = %s\n", (ret==true)?"OK":"Fail");
     
 }
 #endif
