@@ -52,7 +52,6 @@
 #include "gapbondmgr.h"
 #include "app_err.h"
 #include "battery.h"
-#include "led_light.h"
 //#include "hrs3300.h"
 #include "hrs/hx3690l.h"
 #include "wristservice.h"
@@ -368,15 +367,6 @@ static int cmd_acc_notif_stop(const uint8* data, uint16 len)
   return cmd_response_err(data, len, APP_SUCCESS);
 }
 
-static int cmd_light_ctrl(const uint8_t* data, uint16_t len)
-{
-  int ret;
-  wristCmdLight_t* plight = (wristCmdLight_t*)data;
-  ret = light_ctrl(plight->ch, plight->value);
-  ret = (ret == PPlus_SUCCESS) ? APP_SUCCESS: APP_ERR_PARAM;
-  return cmd_response_err(data, len, ret);
-}
-
 static int cmd_lookup_bracelet(const uint8* data, uint16 len)
 {
   //add code for vibrating the bracelet
@@ -556,11 +546,6 @@ int on_recieved_cmd_packet(const uint8* data, uint16 len)
   case  WRIST_CMD_ACC_NOTIF_STOP:
     ret = cmd_acc_notif_stop(data, len);
     break;
-    
-  case  WRIST_CMD_LIGHT_CTRL:
-    ret = cmd_light_ctrl(data, len);
-    break;
-    
   case  WRIST_CMD_MSG_NOTIF:
     ret = cmd_msg_notification(data, len);
     break;

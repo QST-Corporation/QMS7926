@@ -474,11 +474,6 @@
               <FilePath>.\Source\battery.c</FilePath>
             </File>
             <File>
-              <FileName>led_light.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Source\led_light.c</FilePath>
-            </File>
-            <File>
               <FileName>QMA7981.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Source\QMA7981.c</FilePath>

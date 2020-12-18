@@ -58,7 +58,6 @@
 #include "hrs/hx3690l.h"
 #include "QMA7981.h"
 #include "battery.h"
-#include "led_light.h"
 #include "kscan.h"
 #include "log.h"
 
@@ -387,13 +386,6 @@ void appWristInit( uint8 task_id )
 
   // Setup a delayed profile startup
   osal_set_event( AppWrist_TaskID, START_DEVICE_EVT );
-  light_init();
-//  light_ctrl(0,10);
-//  light_ctrl(1,50);
-//  light_ctrl(2,80);
-//  light_ctrl(0,0);
-//  light_ctrl(1,0);
-//  light_ctrl(2,0);
   hx3690l_register(on_HeartRateValueUpdate);
   //batt_init();
 	QMA7981_init(on_QMA7981_evt);
@@ -489,13 +481,7 @@ uint16 appWristProcEvt( uint8 task_id, uint16 events )
 		drv_QMA7981_event_handle();
     return ( events ^ ACC_DATA_EVT);
   }
-  
-  if( events & TIMER_LIGHT_EVT)
-  {
-		light_timeout_handle();
-    return ( events ^ TIMER_LIGHT_EVT);
-  }
-  
+
   if( events & TIMER_KSCAN_DEBOUNCE_EVT)
   {
     hal_kscan_timeout_handler();
