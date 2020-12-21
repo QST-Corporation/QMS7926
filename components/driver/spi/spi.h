@@ -52,7 +52,7 @@
 
 #define  SPI_MASTER_MODE      1    //define master mode,1:master mode,0:salve mode
 
-#define  SPI_USE_TIMEOUT 0
+#define  SPI_USE_TIMEOUT 1
 #define  SPI_OP_TIMEOUT  100        //100ms for an Byte operation
 #if(SPI_USE_TIMEOUT == 1)
   #define SPI_INIT_TOUT(to)               int to = hal_systick()
@@ -93,32 +93,21 @@ typedef enum{
 	 SPI1,          //use spi 1
 }SPI_INDEX_e;
 
-typedef enum{
-	 DFS_4BIT=0x3,
-	 DFS_5BIT,
-	 DFS_6BIT,
-	 DFS_7BIT,
-	 DFS_8BIT,
-	 DFS_9BIT,
-	 DFS_10BIT,
-	 DFS_11BIT,
-	 DFS_12BIT,
-	 DFS_13BIT,
-	 DFS_14BIT,
-	 DFS_15BIT,
-	 DFS_16BIT,
-}DATA_FRAME_SIZE_e;
 
 typedef enum{
-	TRANSMIT_COMPLETED = 0,
-} spi_Type_t;
+	SPI_TX_COMPLETED = 1,
+	SPI_TX_REQ_S,   //slave tx
+	SPI_RX_DATA_S,  //slave rx
+} SPI_EVT_e;
 
-typedef struct _spi_Evt_t{
-	uint8_t spi;
-	spi_Type_t  type;
-}spi_Evt_t;
+typedef struct _spi_evt_t{
+	uint8_t     id;
+	SPI_EVT_e   evt;
+	uint8_t*    data;
+	uint8_t     len;
+}spi_evt_t;
 
-typedef void (*spi_Hdl_t)(spi_Evt_t evt);
+typedef void (*spi_hdl_t)(spi_evt_t* pevt);
 
 typedef struct _spi_Cfg_t{
 	GPIO_Pin_e    sclk_pin;
@@ -128,9 +117,9 @@ typedef struct _spi_Cfg_t{
 	uint32_t      baudrate;
 	SPI_TMOD_e    spi_tmod;
 	SPI_SCMOD_e   spi_scmod;
-	bool int_mode;
-	bool force_cs;
-	spi_Hdl_t  evt_handler;
+	bool          int_mode;
+	bool          force_cs;
+	spi_hdl_t     evt_handler;
 }spi_Cfg_t;
 
 typedef enum{
@@ -155,126 +144,19 @@ typedef struct{
 	uint8_t* rx_ptr;
 }spi_data_t;
 
-/**************************************************************************************
- * @fn          hal_SPI0_IRQHandler
- *
- * @brief       This function process for spi0 interrupt,when use int please consummate its callbackfunction
- *
- * input parameters
- *
- * @param       None.      
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      None.
- **************************************************************************************/
 void __attribute__((weak)) hal_SPI0_IRQHandler(void);
 
-/**************************************************************************************
- * @fn          hal_SPI1_IRQHandler
- *
- * @brief       This function process for spi1 interrupt,when use int please consummate its callbackfunction
- *
- * input parameters
- *
- * @param       None.      
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      None.
- **************************************************************************************/
 void __attribute__((weak)) hal_SPI1_IRQHandler(void);
 
-/**************************************************************************************
- * @fn          hal_spi_init
- *
- * @brief       This function will config the spi module.
- *
- * input parameters
- *
- * @param       	spi_Cfg_t cfg:there are two parameter you need config to use spi,one is cfg,another is the macro SPI_MASTER_MODE
- *                refer to struct spi_Cfg_t,you will config it right.
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      
- * 							PPlus_SUCCESS:config success.
- * 							PPlus_ERR_BUSY:the spi you want to use is work,please use another or stop it and reuse it.
- * 							PPlus_ERR_INVALID_PARAM:there are two spi in mcu,you parameter is invalid.
- **************************************************************************************/
+int hal_spis_clear_rx(hal_spi_t* spi_ptr);
+uint32_t hal_spis_rx_len(hal_spi_t* spi_ptr);
+int hal_spis_read_rxn(hal_spi_t* spi_ptr, uint8_t* pbuf, uint16_t len);
 int hal_spi_bus_init(hal_spi_t* spi_ptr,spi_Cfg_t cfg);
+int hal_spis_bus_init(hal_spi_t* spi_ptr,spi_Cfg_t cfg);
 
-/**************************************************************************************
- * @fn          hal_spi_deinit
- *
- * @brief       This function will deinit the spi you select.
- *
- * input parameters
- *
- * @param       	hal_spi_t* spi_ptr: spi module handle.
-
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      
- *              PPlus_SUCCESS
- *              PPlus_ERR_INVALID_PARAM
- **************************************************************************************/
 int hal_spi_bus_deinit(hal_spi_t* spi_ptr);
 
-/**************************************************************************************
- * @fn          hal_spi_init
- *
- * @brief       it is used to init spi module.
- *
- * input parameters
- * @param       None
- *
- * output parameters
- * @param       None.
- *
- * @return      None.
- **************************************************************************************/
-void hal_spi_init(void);
-
-/**************************************************************************************
- * @fn          hal_spi_transmit
- *
- * @brief       transmit data
- * please care polling mode or int mode,force cs manually or not.
- *
- * polling mode:this function will return just after all the transmit has been finished.
- *
- * int mode:the function just start the tranmsit,when tranmit finish the idle flag will set true in int.
- *              so after call this api,you can use a callback function to tell transmit result.
- *
- * force_cs=true:data will transmit in one time.
- *               cs is valid in the transmit. 
- *
- * force_cs=false:data will transmit in several times.one time transmit one frame.frame length is 8 bytes.
- *							 cs is valid only when the frame transmit¡£
- *
- * input parameters
- * @param       spi_ptr:which spi module used,polling mode or int mode,force cs manually or not
- * @param       tx_buf:send data buffer start address
- * @param       rx_buf:receive data buffer start address
- * @param       len:tramsmit data len
- *
- * output parameters
- * @param       None.
- *
- * @return 
- *              PPlus_SUCCESS
- *              parameter error
- **************************************************************************************/
+int hal_spi_init(SPI_INDEX_e channel);
 int hal_spi_transmit(hal_spi_t* spi_ptr,uint8_t* tx_buf,uint8_t* rx_buf,uint16_t len);
 
 int hal_spi_int_set_tx_buf(hal_spi_t* spi_ptr,uint8_t* tx_buf,uint16_t len);
@@ -282,7 +164,7 @@ int hal_spi_set_int_mode(hal_spi_t* spi_ptr,bool en);
 int hal_spi_set_force_cs(hal_spi_t* spi_ptr,bool en);
 
 bool hal_spi_get_transmit_bus_state(hal_spi_t* spi_ptr);
-void hal_spi_TxComplete(hal_spi_t* spi_ptr);
-void hal_spi_send_byte(hal_spi_t* spi_ptr,uint8_t data);
+int hal_spi_TxComplete(hal_spi_t* spi_ptr);
+int hal_spi_send_byte(hal_spi_t* spi_ptr,uint8_t data);
 
 #endif
