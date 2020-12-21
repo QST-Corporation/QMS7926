@@ -9,7 +9,6 @@
 //#define MALLOC_MEMORY
 
 //#define GSENSER_DATA
-//#define HRS_BLE_APP
 //#define  SPO2_VECTOR
 //#define HR_VECTO
          
@@ -185,28 +184,6 @@ typedef struct {
     uint8_t state;
 } SPO2_CAL_SET_T;
 
-
-#ifdef HRS_BLE_APP
-typedef enum {
-    START_VECTOR_FLAG = 0,
-	HRS_VECTOR_FLAG = 0x55,
-	SPO2_VECTOR_FLAG = 0x66
-} vector_flag_t;
-typedef struct {
-	vector_flag_t vector_flag;
-    uint32_t data_cnt;
-	uint8_t  hr_result;
-	int32_t red_raw_data; //hrs:green,spo2:red
-	int32_t ir_raw_data;  //hrs:no use,spo2:ir
-	int16_t gsensor_x;
-	int16_t gsensor_y;
-	int16_t gsensor_z;
-    uint8_t red_cur;       //hrs:green cur drv,spo2:red cur drv
-    uint8_t ir_cur;        //hrs:no use,spo2:ir cur drv
-    
-    
-}rawdata_vector_t ;
-#endif
 //add ericy 20180428
 
 #if defined(MALLOC_MEMORY)
@@ -263,15 +240,6 @@ int hx3690l_register(hx3690lCB_t cb);
 //void display_refresh(void);
 //void ble_rawdata_clear(void);
 
-
-#ifdef HRS_BLE_APP
-void ble_rawdata_vector_push(rawdata_vector_t rawdata);
-uint32_t ble_hrs_heart_rate_send_ext(uint8_t flag,uint8_t data_cnt,uint8_t result,\
-                              int32_t red_rawdata,int32_t ir_rawdata,\
-                              int16_t gsensor_x, int16_t gsensor_y, int16_t gsensor_z,\
-                              uint8_t red_cur, uint8_t ir_cur);
-
-#endif
 uint32_t ble_rawdata_send_handler(void);
 
 //extern uint32_t hx3690_timers_start(void);

@@ -509,9 +509,9 @@ void hx3690l_spo2_ppg_init(void) //20200615 ericy ppg fs=25hz, phase3 conversion
 
     hx3690l_write_reg(0X51, 0x02);
     hx3690l_delay(5);
-	hx3690l_write_reg(0X13, 0x30);
-	hx3690l_delay(5);
-	hx3690l_write_reg(0X13, 0x31);
+    hx3690l_write_reg(0X13, 0x30);
+    hx3690l_delay(5);
+    hx3690l_write_reg(0X13, 0x31);
     hx3690l_write_reg(0X51, 0x00);
 
    // while(1);
@@ -899,48 +899,13 @@ void hx3690l_spo2_ppg_Int_handle(void)
 
     //display part
     alg_results = hx3690_spo2_alg_get_results();
-#if 1
+
     hr_ev_t ev;
     ev.ev = HR_EV_SPO2_VALUE;
     ev.value = alg_results.spo2_result;
     ev.data = NULL;
     hx3690lCB(&ev);
     AGC_LOG("spo2_result:%d, spo2_alg_status:%d\n", alg_results.spo2_result, alg_results.spo2_alg_status);
-
-#else
-    oled_dis.refresh_time++;
-    if(oled_dis.refresh_time > 3) //330ms*3 = 990ms ~ 1s
-    {
-        oled_dis.refresh_flag = 1;
-        oled_dis.refresh_time = 0;
-        oled_dis.dis_mode = DIS_SPO2;
-        oled_dis.dis_data = alg_results.spo2_result;
-    }
-#endif
-          
-    //SEGGER_RTT_printf(0,"oledata: %d,oledstatus: %d\r\n", alg_results.hr_result,alg_results.alg_status);
-
-    #ifdef HRS_BLE_APP
-    {
-        rawdata_vector_t rawdata;
-        SPO2_CAL_SET_T cal= get_spo2_agc_status();
-        for(ii=0;ii<*count;ii++)
-        {
-            rawdata.vector_flag = SPO2_VECTOR_FLAG;
-            rawdata.data_cnt = alg_results.data_cnt-*count+ii;
-            rawdata.hr_result = alg_results.spo2_result;            
-            rawdata.red_raw_data = red_buf[ii];
-            rawdata.ir_raw_data = ir_buf[ii];
-            rawdata.gsensor_x = gsen_fifo_x[ii];
-            rawdata.gsensor_y = gsen_fifo_y[ii];
-            rawdata.gsensor_z = gsen_fifo_z[ii];
-            rawdata.red_cur = cal.R_LED;
-            rawdata.ir_cur = cal.IR_LED;
-            
-            ble_rawdata_vector_push(rawdata);                  
-        }
-    }
-    #endif    
 }
 #endif
 
@@ -1023,158 +988,6 @@ void hx3690l_ft_spo2_Int_handle(void)
     ret = hx3693_factroy_test(SPO2_GRAY_CARD_TEST,*count,red_buf,ir_buf);       
     AGC_LOG("HR_GRAY_CARD_TEST = %s\n", (ret==true)?"OK":"Fail");
     
-}
-#endif
-
-#if 0
-void display_refresh(void)
-{
-    char dis_buf[]="0000";
-
-    
-
-    if(oled_dis.refresh_flag)
-    {
-        oled_dis.refresh_flag = 0;
-
-        switch(oled_dis.dis_mode)
-        {  
-            case DIS_WAIT:
-               OLED_DisplayString(0,4,16,16,"Hrs ----"); // init error
-               OLED_DisplayString(0,6,16,16,"Spo2 ---"); // init error
-               //opr_display_wait(0,oled_dis.dis_data);
-               break;
-            case DIS_BP:
-               //opr_display_bp(oled_dis.dis_sbp,oled_dis.dis_dbp);
-               break;
-            case DIS_HR:
-                sprintf(dis_buf, "%02d", oled_dis.dis_data);
-                OLED_DisplayString(0,4,16,16,"Hrs");
-                OLED_DisplayString(64,4,16,16,"   ");
-                OLED_DisplayString(64,4,16,16,dis_buf); // init error
-               //opr_display_hr(1,oled_dis.dis_data);
-               break;
-            case DIS_SPO2:
-
-                sprintf(dis_buf, "%02d", oled_dis.dis_data);
-                OLED_DisplayString(0,6,16,16,"Spo2"); // init error
-                OLED_DisplayString(80,6,16,16,"   "); // init error
-                OLED_DisplayString(80,6,16,16,dis_buf); // init error
-               //opr_display_hr(0,oled_dis.dis_data);
-               break;
-                                    
-            default:
-                sprintf(dis_buf, "%02d", oled_dis.dis_data);
-                OLED_DisplayString(0,4,16,16,"Hrs");
-                OLED_DisplayString(64,4,16,16,"   ");
-                OLED_DisplayString(64,4,16,16,dis_buf); // init error
-               //opr_display_hr(1,oled_dis.dis_data);
-               break;
-        }
-    }
-}
-#endif
-
-#ifdef HRS_BLE_APP
-
-#define  MAX_VECTOR     50
-volatile rawdata_vector_t rawdata_vector[MAX_VECTOR]; 
-uint32_t vec_push_p = 0;
-uint32_t vec_pull_p = 0;
-uint8_t ble_send_start = 0;
-void ble_rawdata_vector_push(rawdata_vector_t rawdata);
-
-#ifdef HRS_BLE_APP_1S
-extern  void ble_hrs_heart_rate_send(uint16_t hrs);
-#endif
-
-void ble_rawdata_clear(void)
-{
-    int nIndex = 0;
-    if (ble_send_start == 1)
-    {
-        vec_push_p = 0;
-        vec_pull_p = 0;
-        ble_send_start = 0;
-        for(nIndex = 0; nIndex< MAX_VECTOR-1; nIndex++)
-        {
-            rawdata_vector[nIndex].vector_flag = HRS_VECTOR_FLAG;
-        }
-    }
-    DEBUG_PRINTF(0, "ble_rawdata_clear\n");
-    
-}
-
-void ble_rawdata_vector_push(rawdata_vector_t rawdata)
-{
-    int nIndex = 0;
-
-    if (ble_send_start == 0)
-    {
-        vec_push_p = 0;
-    }
-    else
-    {
-        vec_push_p++;
-        if (vec_push_p > MAX_VECTOR-1)
-        {
-            vec_push_p = 0;
-        }
-    }
-    nIndex = vec_push_p;
-    
-    rawdata_vector[nIndex].vector_flag = rawdata.vector_flag;
-    rawdata_vector[nIndex].data_cnt = rawdata.data_cnt;
-    rawdata_vector[nIndex].hr_result = rawdata.hr_result;     
-    rawdata_vector[nIndex].red_raw_data = rawdata.red_raw_data;
-    rawdata_vector[nIndex].ir_raw_data = rawdata.ir_raw_data;
-    rawdata_vector[nIndex].gsensor_x = rawdata.gsensor_x;
-    rawdata_vector[nIndex].gsensor_y = rawdata.gsensor_y;
-    rawdata_vector[nIndex].gsensor_z = rawdata.gsensor_z;
-    rawdata_vector[nIndex].red_cur = rawdata.red_cur;
-    rawdata_vector[nIndex].ir_cur = rawdata.ir_cur;
-}
-
-
-uint32_t ble_rawdata_send_handler( )
-{
-    uint32_t error_code = NRF_ERROR_INVALID_STATE;
-             //DEBUG_PRINTF(0,"cnt = %d, red=%d, ir=%d,X = %d, y= %d, z=%d\n", rawdata_vector[vec_pull_p].data_cnt, \
-                        rawdata_vector[vec_pull_p].red_raw_data,rawdata_vector[vec_pull_p].ir_raw_data, \
-                        rawdata_vector[vec_pull_p].gsensor_x, rawdata_vector[vec_pull_p].gsensor_y, \
-                        rawdata_vector[vec_pull_p].gsensor_z);
-    do 
-    {
-        if (rawdata_vector[vec_pull_p].vector_flag >0)
-        {
-
-            error_code =  ble_hrs_heart_rate_send_ext(rawdata_vector[vec_pull_p].vector_flag,\
-                        rawdata_vector[vec_pull_p].data_cnt,rawdata_vector[vec_pull_p].hr_result,\
-                        rawdata_vector[vec_pull_p].red_raw_data,\
-                        rawdata_vector[vec_pull_p].ir_raw_data,\
-                        rawdata_vector[vec_pull_p].gsensor_x,\
-                        rawdata_vector[vec_pull_p].gsensor_y,\
-                        rawdata_vector[vec_pull_p].gsensor_z,\
-                        rawdata_vector[vec_pull_p].red_cur ,rawdata_vector[vec_pull_p].ir_cur);
-            
-            
-
-            if ( NRF_SUCCESS == error_code)
-            {
-                ble_send_start = 1;
-                rawdata_vector[vec_pull_p].vector_flag = 0;
-                vec_pull_p++;
-                if (vec_pull_p > MAX_VECTOR-1)
-                {
-                    vec_pull_p = 0;
-                } 
-            }            
-        }
-    }
-    while((NRF_SUCCESS == error_code)&&(rawdata_vector[vec_pull_p].vector_flag >0));
-
-    return error_code;
-
 }
 #endif
 
