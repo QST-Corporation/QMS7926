@@ -61,6 +61,7 @@
 
 //timer
 #define TIMER_DT_EVT                            0x0004  //for datetime sync
+#define HOST_SPI_EVT                            0x0008  //for host command receive
 #define TIMER_HR_EVT                            0x0010  //for heartrate detect
 #define TIMER_BATT_EVT                          0x0020  //for battery detect
 #define BATT_VALUE_EVT                          0x0040  //event for battery voltage value update

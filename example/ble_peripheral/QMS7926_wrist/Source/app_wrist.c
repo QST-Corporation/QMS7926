@@ -59,6 +59,8 @@
 #include "QMA7981.h"
 #include "battery.h"
 #include "kscan.h"
+#include "host_comm.h"
+#include "pwrmgr.h"
 #include "log.h"
 
 /*********************************************************************
@@ -295,6 +297,13 @@ void on_QMA7981_evt(QMA7981_ev_t* pev)
   }
 }
 
+void host_wakeup_evt(GPIO_Pin_e pin,IO_Wakeup_Pol_e type)
+{
+  hal_pwrmgr_lock(MOD_USR1);
+  host_spi_deinit();
+  host_spi_init();
+  osal_start_timerEx(AppWrist_TaskID, HOST_SPI_EVT, 16);
+}
 
 /*********************************************************************
  * PUBLIC FUNCTIONS
@@ -387,6 +396,7 @@ void appWristInit( uint8 task_id )
   // Setup a delayed profile startup
   osal_set_event( AppWrist_TaskID, START_DEVICE_EVT );
   hx3690l_register(on_HeartRateValueUpdate);
+  host_wakeup_register(host_wakeup_evt);
   //batt_init();
 	QMA7981_init(on_QMA7981_evt);
   {
@@ -434,8 +444,6 @@ uint16 appWristProcEvt( uint8 task_id, uint16 events )
     // return unprocessed events
     return (events ^ SYS_EVENT_MSG);
   }
- 
-  
 
   if ( events & START_DEVICE_EVT )
   {
@@ -446,6 +454,13 @@ uint16 appWristProcEvt( uint8 task_id, uint16 events )
     GAPBondMgr_Register( (gapBondCBs_t *) &WristBondCB );
     
     return ( events ^ START_DEVICE_EVT );
+  }
+
+  if ( events & HOST_SPI_EVT )
+  {
+    host_spi_command_handler();
+    hal_pwrmgr_unlock(MOD_USR1);
+    return ( events ^ HOST_SPI_EVT );
   }
 
   if( events & TIMER_DT_EVT)

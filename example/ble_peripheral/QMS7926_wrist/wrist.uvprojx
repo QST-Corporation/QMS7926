@@ -478,6 +478,11 @@
               <FileType>1</FileType>
               <FilePath>.\Source\QMA7981.c</FilePath>
             </File>
+            <File>
+              <FileName>host_comm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Source\host_comm.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
