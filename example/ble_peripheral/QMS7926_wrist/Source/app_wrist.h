@@ -67,7 +67,7 @@
 #define BATT_VALUE_EVT                          0x0040  //event for battery voltage value update
 #define BATT_CHARGE_EVT                         0x0080  //event for battery charge status change
 #define ACC_DATA_EVT                            0x0100  //event for accelerator data change
-#define TIMER_LIGHT_EVT                         0x0200  //for led light timeout
+#define WRIST_GPS_RX_TIMEOUT_EVT                0x0200  //for gps rx timeout event
 #define TIMER_KSCAN_DEBOUNCE_EVT                0x0400  //for keyscan debounce
 #define TIMER_TEST_EVT                          0x0800  //for test
 #define SLAVE_TX_COMPLETED_EVT                  0x1000

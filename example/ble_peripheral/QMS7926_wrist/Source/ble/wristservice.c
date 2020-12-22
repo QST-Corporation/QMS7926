@@ -54,6 +54,7 @@
 #include "battery.h"
 //#include "hrs3300.h"
 #include "hrs/hx3690l.h"
+#include "gps/gps.h"
 #include "wristservice.h"
 #include "log.h"
 #include "error.h"
@@ -546,6 +547,12 @@ int on_recieved_cmd_packet(const uint8* data, uint16 len)
     break;
   case  WRIST_CMD_ACC_NOTIF_STOP:
     ret = cmd_acc_notif_stop(data, len);
+    break;
+  case WRIST_CMD_GPS_TX:
+    uint8_t gps_data[5] = {0x11,0x22,0x33,0x44,0x55};
+    gps_data_transmit(gps_data, sizeof(gps_data));
+    break;
+  case WRIST_CMD_GPS_RX:
     break;
   case  WRIST_CMD_MSG_NOTIF:
     ret = cmd_msg_notification(data, len);

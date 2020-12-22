@@ -60,6 +60,7 @@
 #include "battery.h"
 #include "kscan.h"
 #include "host_comm.h"
+#include "gps/gps.h"
 #include "pwrmgr.h"
 #include "log.h"
 
@@ -397,6 +398,7 @@ void appWristInit( uint8 task_id )
   osal_set_event( AppWrist_TaskID, START_DEVICE_EVT );
   hx3690l_register(on_HeartRateValueUpdate);
   host_wakeup_register(host_wakeup_evt);
+  gps_uart_config(AppWrist_TaskID);
   //batt_init();
 	QMA7981_init(on_QMA7981_evt);
   {
@@ -504,7 +506,11 @@ uint16 appWristProcEvt( uint8 task_id, uint16 events )
 		drv_QMA7981_event_handle();
     return ( events ^ ACC_DATA_EVT);
   }
-
+  if( events & WRIST_GPS_RX_TIMEOUT_EVT)
+  {
+    gps_receive_handler();
+    return ( events ^ WRIST_GPS_RX_TIMEOUT_EVT);
+  }
   if( events & TIMER_KSCAN_DEBOUNCE_EVT)
   {
     hal_kscan_timeout_handler();
