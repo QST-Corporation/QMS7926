@@ -651,18 +651,14 @@ int wristProfileResponseSPO2Value(uint8_t SPO2_Value)
 }
 
 /*acc_value: 1000 == 1G*/
-int wristProfileResponseAccelerationData(int gx, int gy, int gz)
+int wristProfileResponseAccelerationData(int16_t *accBuf)
 {
   if(sNotifyAccelerationDataFlag){
-    int acc[3]; 
     wristRspAcc_t accdata;
-    acc[0] = gx;
-    acc[1] = gy;
-    acc[2] = gz;
     accdata.cmd = WRIST_NOTIFY_ACC;
     accdata.csn = 0;
-    LOG("%d,  %d, %d\n",gx,gy,gz);
-    memcpy(accdata.acc, (void*)acc, 4*3);
+    LOG("%d,  %d, %d\n",accBuf[0], accBuf[1], accBuf[2]);
+    memcpy(accdata.acc, (void*)accBuf, sizeof(int16_t)*3);
     accdata.chksum = checksum((uint8*)(&accdata), sizeof(accdata)-1);
     return cmd_response((uint8*)(&accdata), sizeof(accdata));
   }

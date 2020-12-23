@@ -278,7 +278,7 @@ typedef void (*wristServiceCB_t)(uint8 event, uint8 param_len, uint8* param);
 extern int wristProfileResponseHRValue(uint8_t HR_Value);
 extern int wristProfileResponseHRRawData(uint8_t cnt, uint16_t* pdata);
 int wristProfileResponseSPO2Value(uint8_t SPO2_Value);
-extern int wristProfileResponseAccelerationData(int gx, int gy, int gz);
+int wristProfileResponseAccelerationData(int16_t *accBuf);
 extern int wristProfileResponseKScan(uint8_t num, uint8_t* key);
 
 extern bStatus_t wristProfile_AddService(wristServiceCB_t cb);
