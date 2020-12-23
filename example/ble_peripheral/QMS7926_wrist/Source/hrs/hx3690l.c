@@ -820,7 +820,7 @@ void hx3690l_hrs_ppg_Int_handle(void)
     ev.value = alg_results.hr_result;
     ev.data = NULL;
     hx3690lCB(&ev);
-    AGC_LOG("hr_result:%d, alg_status:%d\n", alg_results.hr_result, alg_results.hrs_alg_status);
+    AGC_LOG("hr_result:%d, alg_status:%d, wear_status:%d\n", alg_results.hr_result, alg_results.hrs_alg_status, alg_results.hrs_wear_status);
 
     #ifdef HRS_BLE_APP
     {
@@ -905,7 +905,7 @@ void hx3690l_spo2_ppg_Int_handle(void)
     ev.value = alg_results.spo2_result;
     ev.data = NULL;
     hx3690lCB(&ev);
-    AGC_LOG("spo2_result:%d, spo2_alg_status:%d\n", alg_results.spo2_result, alg_results.spo2_alg_status);
+    AGC_LOG("spo2_result:%d, alg_status:%d, wear_status:%d\n", alg_results.spo2_result, alg_results.spo2_alg_status, alg_results.spo2_wear_status);
 }
 #endif
 
