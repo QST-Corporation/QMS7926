@@ -47,15 +47,12 @@
 #include "log.h"
 #include "app_wrist.h"
 
-#define QMA7981_SLAVE_ADDR 0x12
-#define STEP_W_TIME_L	300
-#define STEP_W_TIME_H	250
-#define QMA7981_LAYOUT  0
-
 typedef struct _QMA7981_ctx_t{
-	bool			module_valid;
-	uint32_t		evt_cnt;
-	QMA7981_evt_hdl_t evt_hdl;
+  bool              module_valid;
+  uint8_t           pm_value;
+  uint32_t          acc_report_intval;
+  uint32_t          step_report_intval;
+  QMA7981_evt_hdl_t evt_hdl;
 }QMA7981_ctx_t;
 
 // store come from pedometer parm config
@@ -90,16 +87,7 @@ const uint8_t qma7981_init_tbl[][2] =
   {QMA7981_DELAY, 20}
 };
 
-void QMA7981_timer_stop(void)
-{
-}
-void QMA7981_timer_start(int ms)
-{
-    osal_start_timerEx(AppWrist_TaskID, ACC_DATA_EVT, ms);
-}
-
-
-void QMA7981_delay_ms(int ms)
+static void QMA7981_delay_ms(int ms)
 {
     volatile int i = 4500;
     volatile int loop = ms;
@@ -148,163 +136,19 @@ static int QST_i2c_write(void* pi2c, uint8_t reg, uint8_t val)
     return hal_i2c_wait_tx_completed(pi2c);
 }
 
-static uint8_t QMA7981_read_raw_xyz(int16_t *data)
-{
-    uint8_t databuf[6] = {0};
-    int16_t data_raw[3];
-    uint8_t ret;
-    void* pi2c = QST_i2c_init();
-
-    ret = QST_i2c_read(pi2c, QMA7981_DATA_LOWBYTE_X,databuf,6);
-    QST_i2c_deinit(pi2c);
-    if(ret != PPlus_SUCCESS){
-        LOG("ERR: 7981 read xyz error!!!\n");
-        return ret;
-    }
-
-    data_raw[0] = (int16_t)((databuf[1]<<8)|(databuf[0]));
-    data_raw[1] = (int16_t)((databuf[3]<<8)|(databuf[2]));
-    data_raw[2] = (int16_t)((databuf[5]<<8)|(databuf[4]));
-    //LOG("RAW:X%d,Y%d,Z%d\n", data_raw[0], data_raw[1], data_raw[2]);
-    data[0] = data_raw[0]>>2;
-    data[1] = data_raw[1]>>2;
-    data[2] = data_raw[2]>>2;
-    LOG("X%d,Y%d,Z%d\n", data[0], data[1], data[2]);
-
-    return ret;
-}
-
-static uint8_t QMA7981_set_range(void* pi2c, uint8_t range)
-{
-    if(range == QMA7981_RANGE_4G)
-      g_qma7981_lsb_1g = 2048;
-    else if(range == QMA7981_RANGE_8G)
-      g_qma7981_lsb_1g = 1024;
-    else if(range == QMA7981_RANGE_16G)
-      g_qma7981_lsb_1g = 512;
-    else if(range == QMA7981_RANGE_32G)
-      g_qma7981_lsb_1g = 256;
-    else
-      g_qma7981_lsb_1g = 4096;
-
-    return QST_i2c_write(pi2c, QMA7981_REG_RANGE, range);
-}
-
-uint8_t QMA7981_read_acc(float *accData)
-{
-    uint8_t ret;
-    int16_t rawData[3];
-
-    ret = QMA7981_read_raw_xyz(rawData);
-
-    accData[0] = ((float)rawData[0]*GRAVITY_EARTH_1000)/(g_qma7981_lsb_1g);
-    accData[1] = ((float)rawData[1]*GRAVITY_EARTH_1000)/(g_qma7981_lsb_1g);
-    accData[2] = ((float)rawData[2]*GRAVITY_EARTH_1000)/(g_qma7981_lsb_1g);
-
-    return ret;
-}
-
-#if defined(QMA7981_STEPCOUNTER)
-uint32_t QMA7981_read_stepcounter(void)
-{
-    uint8_t data[3];
-    int ret;
-    uint32_t step_num=0;
-    void* pi2c = QST_i2c_init();
-
-    ret = QST_i2c_read(pi2c, QMA7981_STEPCNT_LOWBYTE, data, 2);
-    ret = QST_i2c_read(pi2c, QMA7981_STEPCNT_HIGHBYTE, &data[2], 1);
-    if (ret == PPlus_SUCCESS) {
-      step_num = (uint32_t)(((uint32_t)data[2]<<16)|((uint32_t)data[1]<<8)|data[0]);
-    }
-
-    QST_i2c_deinit(pi2c);
-#if defined(QMA7981_CHECK_ABNORMAL_DATA)
-    ret=qma7981_check_abnormal_data(step_num, &step_num);
-    if(ret != 0)
-    {
-      return -1;
-    }
-#endif
-#if defined(QMA7981_STEP_DEBOUNCE_IN_INT)
-    step_num = qma7981_step_debounce_read_data(step_num);
-#endif
-
-    return step_num;
-}
-
- void QMA7981_clear_step(void)
-{
-    void* pi2c = QST_i2c_init();
-    QST_i2c_write(pi2c, 0x13, 0x80);		// clear step
-    QMA7981_delay_ms(10);
-    QST_i2c_write(pi2c, 0x13, 0x80);		// clear step
-    QMA7981_delay_ms(10);
-    QST_i2c_write(pi2c, 0x13, 0x80);		// clear step
-    QMA7981_delay_ms(10);
-    QST_i2c_write(pi2c, 0x13, 0x80);		// clear step
-    QST_i2c_write(pi2c, 0x13, 0x7f);		// clear step
-    QST_i2c_deinit(pi2c);
-}
-#endif
-
-uint8_t QMA7981_fetch_data_handler(void)
-{
-    QMA7981_ev_t ev;
-    int16_t acc_data[3];
-    uint8_t ret;
-
-    QMA7981_timer_start(1000);
-    ret = QMA7981_read_raw_xyz(acc_data);
-
-    ev.ev = wmi_event;
-    ev.size = 3;
-    ev.data = acc_data;
-    s_QMA7981_ctx.evt_hdl(&ev);
-    return ret;
-}
-
-#if defined(QMA7981_STEPCOUNTER)
-uint8_t QMA7981_fetch_stepcounter_handler(void)
-{
-    QMA7981_ev_t ev;
-    uint32_t stepCount;
-
-    QMA7981_timer_start(1000);
-    stepCount = QMA7981_read_stepcounter();
-
-    ev.ev = step_event;
-    ev.size = 1;
-    ev.data = &stepCount;
-    s_QMA7981_ctx.evt_hdl(&ev);
-    return 0;
-}
-#endif
-
-void QMA7981_report_handup_evt(void)
-{
-    QMA7981_ev_t evt;
-    evt.ev = handUp_event;
-    evt.size = 0;
-    s_QMA7981_ctx.evt_hdl(&evt);
-}
-
-void QMA7981_int_hdl(GPIO_Pin_e pin,IO_Wakeup_Pol_e type)
+static void QMA7981_int_handler(GPIO_Pin_e pin,IO_Wakeup_Pol_e type)
 {
     uint8_t r_data[4]={0x00,};
     //uint8_t reg_0x18 = 0;
     uint8_t reg_0x1a = 0;
     uint8_t int_type = 0xff;
-    int ret = -1;
+    void* pi2c = QST_i2c_init();
 
   //if(type == POSEDGE)
   //{
-        //s_QMA7981_ctx.evt_cnt ++;
-        //osal_set_event(AppWrist_TaskID, ACC_DATA_EVT);
 
-    void* pi2c = QST_i2c_init();
-    ret = QST_i2c_read(pi2c, QMA7981_INT_ST0, r_data, 3);
-    //LOG("r_data:%x,%x,%x,ret[%d]\n",r_data[0],r_data[1],r_data[2],ret);
+    QST_i2c_read(pi2c, QMA7981_INT_ST0, r_data, 3);
+    //LOG("r_data:%x,%x,%x\n",r_data[0],r_data[1],r_data[2]);
     if(r_data[0] & 0xF)
     {
       int_type = 1;
@@ -351,22 +195,25 @@ void QMA7981_int_hdl(GPIO_Pin_e pin,IO_Wakeup_Pol_e type)
     }
 #endif
     //LOG("int_type:%d\n", int_type);
-    LOG("Hand up!\n");
+    osal_set_event(AppWrist_TaskID, ACC_INT_EVT);
     QST_i2c_deinit(pi2c);
 // }
 }
 
-void QMA7981_timeout_hdl(void *parm)
+static uint8_t QMA7981_set_range(void* pi2c, uint8_t range)
 {
-    QMA7981_ev_t ev;
-    int16_t acc_data[3];
+    if(range == QMA7981_RANGE_4G)
+      g_qma7981_lsb_1g = 2048;
+    else if(range == QMA7981_RANGE_8G)
+      g_qma7981_lsb_1g = 1024;
+    else if(range == QMA7981_RANGE_16G)
+      g_qma7981_lsb_1g = 512;
+    else if(range == QMA7981_RANGE_32G)
+      g_qma7981_lsb_1g = 256;
+    else
+      g_qma7981_lsb_1g = 4096;
 
-    QMA7981_read_raw_xyz(acc_data);
-
-    ev.ev = wmi_event;
-    ev.size = 3;
-    ev.data = acc_data;
-    s_QMA7981_ctx.evt_hdl(&ev);
+    return QST_i2c_write(pi2c, QMA7981_REG_RANGE, range);
 }
 
 #if defined(QMA7981_HAND_UP_DOWN)
@@ -374,7 +221,7 @@ static void QMA7981_set_hand_up_down(void* pi2c, int8_t layout)
 {
 #if 1//defined(QMA7981_SWAP_XY)
     uint8_t reg_0x42 = 0;
-    #endif
+#endif
     uint8_t reg_0x1e = 0;
     uint8_t reg_0x34 = 0;
     uint8_t yz_th_sel = 4;
@@ -382,14 +229,14 @@ static void QMA7981_set_hand_up_down(void* pi2c, int8_t layout)
     uint8_t x_th = 6;		// 0--7.5
     int8_t z_th = 6;				// -8--7
 
-    #if 1//defined(QMA7981_SWAP_XY)	// swap xy
+#if 1//defined(QMA7981_SWAP_XY)	// swap xy
     if(layout%2)
     {
       QST_i2c_read(pi2c, 0x42, &reg_0x42, 1);
       reg_0x42 |= 0x80;		// 0x42 bit 7 swap x and y
       QST_i2c_write(pi2c, 0x42, reg_0x42);
     }
-    #endif
+#endif
 
     if((layout >=0) && (layout<=3))
     {
@@ -430,7 +277,7 @@ static void QMA7981_set_hand_up_down(void* pi2c, int8_t layout)
     QST_i2c_write(pi2c, 0x2b, (0x7c|(0x03>>2)));
     //QST_i2c_write(pi2c, 0x2a, (0x19|(0x02<<6)));			// 12m/s2 , 0.5m/s2
     //QST_i2c_write(pi2c, 0x2b, (0x7c|(0x02)));
-    QST_i2c_write(pi2c, 0x35, (50));
+    QST_i2c_write(pi2c, 0x35, (50));//50ms
     //QST_i2c_read(pi2c, 0x1e, &reg_0x1e, 1);
     if((z_th&0x80))
     {
@@ -451,29 +298,32 @@ static void QMA7981_set_hand_up_down(void* pi2c, int8_t layout)
 *	@brief this funtion is used for initialize QMA7981 register,and initialize GPIOE，and regeister event handler
 *
 */
-int QMA7981_config(void* pi2c)
+static int QMA7981_config(void)
 {
-    uint8_t  val;
+    uint8_t  chip_id;
+    uint8_t reg_0x10 = 0, reg_0x11 = 0x80;
+    void* pi2c = QST_i2c_init();
     /***************verify proper integraterd circuit******************************/
-    QST_i2c_read(pi2c, QMA7981_CHIP_ID,&val,1);
-    if(val!=0xE7) {
-      LOG("ERR: read QMA7981 chin id(0x%x) failed!\n", val);
+    QST_i2c_write(pi2c, 0x11, reg_0x11); //enable mclk
+    QST_i2c_read(pi2c, QMA7981_CHIP_ID, &chip_id, 1);
+    if(chip_id != 0xE7) {
+      LOG("ERR: read QMA7981 chin id(0x%x) failed!\n", chip_id);
+      QST_i2c_deinit(pi2c);
       return PPlus_ERR_IO_FAIL;
     }
     QMA7981_delay_ms(50);
 
-    uint8_t reg_0x10 = 0, reg_0x11 = 0;
 #if defined(QMA7981_STEPCOUNTER)
     uint8_t reg_0x14 = 0, reg_0x15 = 0;
 #endif
-    uint8_t reg_0x16 = 0, reg_0x18 = 0, reg_0x19 = 0, reg_0x1a = 0,reg_0x2c=0;
+    uint8_t reg_0x16 = 0, reg_0x18 = 0, reg_0x19 = 0, reg_0x1a = 0;
     uint8_t regCount = sizeof(qma7981_init_tbl)/sizeof(qma7981_init_tbl[0]);
     uint8_t index;
     for (index=0; index<regCount; index++) {
       if (qma7981_init_tbl[index][0] == QMA7981_DELAY) {
-              QMA7981_delay_ms(qma7981_init_tbl[index][1]);
+          QMA7981_delay_ms(qma7981_init_tbl[index][1]);
       } else {
-              QST_i2c_write(pi2c, qma7981_init_tbl[index][0], qma7981_init_tbl[index][1]);
+          QST_i2c_write(pi2c, qma7981_init_tbl[index][0], qma7981_init_tbl[index][1]);
       }
     }
 
@@ -487,21 +337,22 @@ int QMA7981_config(void* pi2c)
     QST_i2c_write(pi2c, 0x10, reg_0x10);
     reg_0x11 = 0x80;
     QST_i2c_write(pi2c, 0x11, reg_0x11);
+    s_QMA7981_ctx.pm_value = reg_0x11;
 
 #if defined(QMA7981_STEPCOUNTER)
-    if(reg_0x11 == 0x80)		// 500K
+    if(reg_0x11 == 0x80)  // 500K
     {
       reg_0x10 = 0xe1;
       QST_i2c_write(pi2c, 0x10, reg_0x10);
 
-      reg_0x14 = (((STEP_W_TIME_L*100)/771)+1);		// odr 129.7hz, 7.71ms
+      reg_0x14 = (((STEP_W_TIME_L*100)/771)+1);   // odr 129.7hz, 7.71ms
       reg_0x15 = (((STEP_W_TIME_H*100)/771)+1);
-      if(reg_0x10 == 0xe0)		// odr 65hz
+      if(reg_0x10 == 0xe0)    // odr 65hz
       {
         reg_0x14 = (reg_0x14>>1);
         reg_0x15 = (reg_0x15>>1);
       }
-      else if(reg_0x10 == 0xe5)	// odr 32.5hz
+      else if(reg_0x10 == 0xe5) // odr 32.5hz
       {
         reg_0x14 = (reg_0x14>>2);
         reg_0x15 = (reg_0x15>>2);
@@ -594,6 +445,7 @@ int QMA7981_config(void* pi2c)
 #endif
 
 #if defined(QMA7981_ANY_MOTION)
+    uint8_t reg_0x2c=0;
     reg_0x18 |= 0x07;
     reg_0x1a |= 0x01;
     reg_0x2c |= 0x00;	//BIT[0-1]	 (ANY_MOT_DUR<1:0> + 1) samples 
@@ -601,50 +453,193 @@ int QMA7981_config(void* pi2c)
     QST_i2c_write(pi2c, 0x18, reg_0x18);
     QST_i2c_write(pi2c, 0x1a, reg_0x1a);
     QST_i2c_write(pi2c, 0x2c, reg_0x2c);
-    //qma7981_writereg(0x2e, 0x14);		// 0.488*16*20 = 156mg
-    //qma7981_writereg(0x2e, 0x80);		// 0.488*16*128 = 1g
-    //qma7981_writereg(0x2e, 0xa0);		// 0.488*16*160 = 1.25g
-    //qma7981_writereg(0x2e, 0x60);		// 0.488*16*96 = 750mg
-    //qma7981_writereg(0x2e, 0x40);		// 0.488*16*64 = 500mg
-    //qma7981_writereg(0x2e, 0x20);		// 0.488*16*32 = 250mg
+    //QST_i2c_write(pi2c, 0x2e, 0x14);		// 0.488*16*20 = 156mg
+    //QST_i2c_write(pi2c, 0x2e, 0x80);		// 0.488*16*128 = 1g
+    //QST_i2c_write(pi2c, 0x2e, 0xa0);		// 0.488*16*160 = 1.25g
+    //QST_i2c_write(pi2c, 0x2e, 0x60);		// 0.488*16*96 = 750mg
+    //QST_i2c_write(pi2c, 0x2e, 0x40);		// 0.488*16*64 = 500mg
+    //QST_i2c_write(pi2c, 0x2e, 0x20);		// 0.488*16*32 = 250mg
     QST_i2c_write(pi2c, 0x2e, 0x40);	
 #endif
     QMA7981_delay_ms(50);
 
+    QST_i2c_deinit(pi2c);
     return PPlus_SUCCESS;
 }
 
-
-int QMA7981_enable(void)
+static uint8_t QMA7981_read_raw_xyz(int16_t *data)
 {
-    int ret = 0;
+    uint8_t databuf[6] = {0};
+    int16_t data_raw[3];
+    uint8_t ret;
     void* pi2c = QST_i2c_init();
 
-    ret = QMA7981_config(pi2c);
-    LOG("QMA7981_enable is %d\n",ret);
+    ret = QST_i2c_read(pi2c, QMA7981_DATA_LOWBYTE_X,databuf,6);
     QST_i2c_deinit(pi2c);
+    if(ret != PPlus_SUCCESS){
+        LOG("ERR: 7981 read xyz error!!!\n");
+        return ret;
+    }
+
+    data_raw[0] = (int16_t)((databuf[1]<<8)|(databuf[0]));
+    data_raw[1] = (int16_t)((databuf[3]<<8)|(databuf[2]));
+    data_raw[2] = (int16_t)((databuf[5]<<8)|(databuf[4]));
+    //LOG("RAW:X%d,Y%d,Z%d\n", data_raw[0], data_raw[1], data_raw[2]);
+    data[0] = data_raw[0]>>2;
+    data[1] = data_raw[1]>>2;
+    data[2] = data_raw[2]>>2;
+    LOG("X%d,Y%d,Z%d\n", data[0], data[1], data[2]);
+
     return ret;
 }
 
-int QMA7981_disable(void)
+uint8_t QMA7981_read_acc(float *accData)
 {
+    uint8_t ret;
+    int16_t rawData[3];
+
+    ret = QMA7981_read_raw_xyz(rawData);
+
+    accData[0] = ((float)rawData[0]*GRAVITY_EARTH_1000)/(g_qma7981_lsb_1g); //unit: m/s2
+    accData[1] = ((float)rawData[1]*GRAVITY_EARTH_1000)/(g_qma7981_lsb_1g);
+    accData[2] = ((float)rawData[2]*GRAVITY_EARTH_1000)/(g_qma7981_lsb_1g);
+
+    return ret;
+}
+
+#if defined(QMA7981_STEPCOUNTER)
+uint32_t QMA7981_read_stepcounter(void)
+{
+    uint8_t data[3];
+    int ret;
+    uint32_t step_num=0;
     void* pi2c = QST_i2c_init();
 
-    QST_i2c_write(pi2c, QMA7981_PM, 0x40);
+    ret = QST_i2c_read(pi2c, QMA7981_STEPCNT_LOWBYTE, data, 2);
+    ret = QST_i2c_read(pi2c, QMA7981_STEPCNT_HIGHBYTE, &data[2], 1);
+    if (ret == PPlus_SUCCESS) {
+      step_num = (uint32_t)(((uint32_t)data[2]<<16)|((uint32_t)data[1]<<8)|data[0]);
+    }
+
     QST_i2c_deinit(pi2c);
-    return PPlus_SUCCESS;
+#if defined(QMA7981_CHECK_ABNORMAL_DATA)
+    ret=qma7981_check_abnormal_data(step_num, &step_num);
+    if(ret != 0)
+    {
+      return -1;
+    }
+#endif
+#if defined(QMA7981_STEP_DEBOUNCE_IN_INT)
+    step_num = qma7981_step_debounce_read_data(step_num);
+#endif
+
+    return step_num;
+}
+
+void QMA7981_clear_step(void)
+{
+    void* pi2c = QST_i2c_init();
+    QST_i2c_write(pi2c, 0x13, 0x80);  // clear step
+    QMA7981_delay_ms(10);
+    QST_i2c_write(pi2c, 0x13, 0x80);  // clear step
+    QMA7981_delay_ms(10);
+    QST_i2c_write(pi2c, 0x13, 0x80);  // clear step
+    QMA7981_delay_ms(10);
+    QST_i2c_write(pi2c, 0x13, 0x80);  // clear step
+    QST_i2c_write(pi2c, 0x13, 0x7f);  // clear step
+    QST_i2c_deinit(pi2c);
+}
+#endif
+
+void QMA7981_acc_report_start(uint32_t report_intval_ms)
+{
+    s_QMA7981_ctx.acc_report_intval = report_intval_ms; //for timer reload
+    osal_start_timerEx(AppWrist_TaskID, ACC_DATA_REPORT_EVT, report_intval_ms);
+}
+
+void QMA7981_acc_report_stop(void)
+{
+    osal_stop_timerEx(AppWrist_TaskID, ACC_DATA_REPORT_EVT);
+}
+
+void QQMA7981_step_report_start(uint32_t report_intval_ms)
+{
+    s_QMA7981_ctx.step_report_intval = report_intval_ms; //for timer reload
+    osal_start_timerEx(AppWrist_TaskID, ACC_STEP_REPORT_EVT, report_intval_ms);
+}
+
+void QQMA7981_step_report_stop(void)
+{
+    osal_stop_timerEx(AppWrist_TaskID, ACC_STEP_REPORT_EVT);
+}
+
+uint8_t QMA7981_report_acc(void)
+{
+    QMA7981_ev_t ev;
+    int16_t acc_raw[3];  //float acc_data[3];
+    uint8_t ret;
+
+    osal_start_timerEx(AppWrist_TaskID, ACC_DATA_REPORT_EVT, s_QMA7981_ctx.acc_report_intval);
+    ret = QMA7981_read_raw_xyz(acc_raw);  //ret = QMA7981_read_acc(acc_data);
+
+    ev.ev = acc_event;
+    ev.size = 3;
+    ev.data = acc_raw;  //ev.data = acc_data;
+    s_QMA7981_ctx.evt_hdl(&ev);
+    return ret;
+}
+
+#if defined(QMA7981_STEPCOUNTER)
+uint8_t QMA7981_report_stepcounter(void)
+{
+    QMA7981_ev_t ev;
+    uint32_t stepCount;
+
+    osal_start_timerEx(AppWrist_TaskID, ACC_STEP_REPORT_EVT, s_QMA7981_ctx.step_report_intval);
+    stepCount = QMA7981_read_stepcounter();
+
+    ev.ev = step_event;
+    ev.size = 1;
+    ev.data = &stepCount;
+    s_QMA7981_ctx.evt_hdl(&ev);
+    return 0;
+}
+#endif
+
+void QMA7981_report_handup(void)
+{
+    QMA7981_ev_t evt;
+    evt.ev = handUp_event;
+    evt.size = 0;
+    s_QMA7981_ctx.evt_hdl(&evt);
+}
+
+void QMA7981_deep_sleep(void)
+{
+    uint8_t val = 0;
+    void* pi2c = QST_i2c_init();
+    QST_i2c_read(pi2c, 0x11, &val, 1);
+    s_QMA7981_ctx.pm_value = val;
+    QST_i2c_write(pi2c, 0x11, 0x87); //G-sensor will work with ultra-low MCLK
+    QST_i2c_deinit(pi2c);
+}
+
+void QMA7981_wake_up(void)
+{
+    void* pi2c = QST_i2c_init();
+    QST_i2c_write(pi2c, 0x11, s_QMA7981_ctx.pm_value);
+    QST_i2c_deinit(pi2c);
 }
 
 int QMA7981_init(QMA7981_evt_hdl_t evt_hdl)
 {
     int ret = PPlus_SUCCESS;
-    //copy pcfg
+
     s_QMA7981_ctx.evt_hdl = evt_hdl;
 
-    ret = hal_gpioin_register(P5, QMA7981_int_hdl, NULL );//pin_event_handler);
-
-    ret = QMA7981_enable();
-    QMA7981_timer_start(1000);
+    ret = hal_gpioin_register(P5, QMA7981_int_handler, NULL );
+    ret = QMA7981_config();
+    LOG("QMA7981 initialize: %d\n",ret);
 
     if(ret != PPlus_SUCCESS){
       s_QMA7981_ctx.module_valid = false;

@@ -36,6 +36,9 @@
 #define     QMA7981_STEPCOUNTER
 #define     QMA7981_HAND_UP_DOWN
 //#define     QMA7981_ANY_MOTION
+
+#define     QMA7981_SLAVE_ADDR              0x12
+#define     QMA7981_LAYOUT                  0
 #define     GRAVITY_EARTH_1000              9.807f	// about (9.80665f)*1000   mm/s2
 
 #define     QMA7981_RAISE_CFG5              0x3F
@@ -208,9 +211,8 @@
 #define     ANY_MOT_FIRST_Z                 (0x01 << 2)
 #define     ANY_MOT_FIRST_Y                 (0x01 << 1)
 #define     ANY_MOT_FIRST_X                 (0x01 << 0)
-#define     STEP_CNT_HIGH                   0xFF
-#define     STEP_CNT_MIDDLE                 0xFF
-#define     STEP_CNT_LOW                    0xFF
+#define     STEP_W_TIME_L                   300
+#define     STEP_W_TIME_H                   250
 #define     ACC_DATA_Z_HIGH                 0xFF
 #define     ACC_DATA_Z_LOW                  0xFC
 #define     ACC_DATA_Y_HIGH                 0xFF
@@ -218,38 +220,7 @@
 #define     ACC_DATA_X_HIGH                 0xFF
 #define     ACC_DATA_X_LOW                  0xFC
 #define     QMA7981_DELAY                   0xFF
-#if 0
 
-
-/*Register Map*/
-#define QMA7981_CHIP_ID		  0x00
-#define QMA7981_XOUTL				0x01
-#define QMA7981_XOUTH				0x02
-#define QMA7981_YOUTL				0x03
-#define QMA7981_YOUTH				0x04
-#define QMA7981_ZOUTL				0x05
-#define QMA7981_ZOUTH				0x06
-#define QMA7981_STEP_CNT_L			0x07
-#define QMA7981_INT_STAT0			0x0a
-#define QMA7981_INT_STAT1			0x0b
-#define QMA7981_INT_STAT2			0x0c
-#define QMA7981_INT_STAT3			0x0d
-#define QMA7981_FIFO_STATE			0x0e
-#define QMA7981_STEP_CNT_M			0x0e
-#define QMA7981_REG_RANGE			0x0f
-#define QMA7981_REG_BW_ODR			0x10
-#define QMA7981_REG_POWER_CTL		0x11
-#define QMA7981_STEP_SAMPLE_CNT		0x12
-#define QMA7981_STEP_PRECISION		0x13
-#define QMA7981_STEP_TIME_LOW		0x14
-#define QMA7981_STEP_TIME_UP		0x15
-#define QMA7981_INTPIN_CFG			0x20
-#define QMA7981_INT_CFG				0x21
-#define QMA7981_OS_CUST_X		    0x27
-#define QMA7981_OS_CUST_Y			0x28
-#define QMA7981_OS_CUST_Z			0x29
-#define QMA7981_STEP_TIME_UP		0x15
-#endif
 /* Accelerometer Sensor Full Scale */
 #define QMA7981_RANGE_2G      0x01
 #define QMA7981_RANGE_4G      0x02
@@ -264,7 +235,7 @@ enum{
 	stap_event     = 0x04,	//single tap
 	dtap_event     = 0x08,  //double tap
 	wmi_event      = 0x10,	//acceleration data
-	tilt_event     = 0x20,	//tilt event
+	acc_event      = 0x20,	//tilt event
   step_event     = 0x40   //step counter
 };
 
@@ -277,15 +248,20 @@ typedef struct _QMA7981_ev_t{
 
 typedef void (*QMA7981_evt_hdl_t)	(QMA7981_ev_t* pev);
 
-uint8_t QMA7981_fetch_data_handler(void);
-int QMA7981_enable_tilt(bool en);
-int QMA7981_enable(void);
-int QMA7981_disable(void);
+uint8_t QMA7981_read_acc(float *accData);
+void QMA7981_acc_report_start(uint32_t report_intval_ms);
+void QMA7981_acc_report_stop(void);
+uint8_t QMA7981_report_acc(void);
+void QMA7981_report_handup(void);
+void QMA7981_deep_sleep(void);
+void QMA7981_wake_up(void);
 int QMA7981_init(QMA7981_evt_hdl_t evt_hdl);
 #if defined(QMA7981_STEPCOUNTER)
+void QMA7981_clear_step(void);
 uint32_t QMA7981_read_stepcounter(void);
-uint8_t QMA7981_fetch_stepcounter_handler(void);
+void QQMA7981_step_report_start(uint32_t report_intval_ms);
+void QQMA7981_step_report_stop(void);
+uint8_t QMA7981_report_stepcounter(void);
 #endif
-
 
 #endif   /* _QMA7981_H */

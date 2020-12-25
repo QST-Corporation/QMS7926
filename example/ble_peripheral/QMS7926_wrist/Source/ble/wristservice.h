@@ -123,8 +123,10 @@ enum{
   WRIST_CMD_HR_STOP			    = 0x22,
   WRIST_CMD_SPO2_START      = 0x23,
   WRIST_CMD_SPO2_STOP       = 0x24,
-  WRIST_CMD_ACC_NOTIF_START = 0x30,
-  WRIST_CMD_ACC_NOTIF_STOP  = 0x31,
+  WRIST_CMD_ACC_RAW_NOTIF_START = 0x30,
+  WRIST_CMD_ACC_RAW_NOTIF_STOP  = 0x31,
+  WRIST_CMD_ACC_STEP_NOTIF_START = 0x32,
+  WRIST_CMD_ACC_STEP_NOTIF_STOP  = 0x33,
 
   WRIST_CMD_GPS_TX          = 0x36,
   WRIST_CMD_GPS_RX          = 0x37,
@@ -137,7 +139,8 @@ enum{
   //WRIST_NOTIFY_ENV			= 0x84,
   WRIST_NOTIFY_HR_RAW			= 0x85,
   WRIST_NOTIFY_ACC        = 0x86,
-  WRIST_NOTIFY_KSCAN      = 0x87,
+  WRIST_NOTIFY_STEP       = 0x87,
+  WRIST_NOTIFY_KSCAN      = 0x88,
 
 	WRIST_RO_DATA				= 0xa0,
 
@@ -189,6 +192,13 @@ typedef struct _wristRspAcc_t{
   uint8_t		acc[3*4];
 	uint8_t		chksum;
 }wristRspAcc_t;
+
+typedef struct _wristRspStep_t{
+	uint8_t		cmd;
+	uint8_t		csn;
+  uint32_t  step;
+	uint8_t		chksum;
+}wristRspStep_t;
 
 typedef struct _wristRspKScan_t{
 	uint8_t		cmd;

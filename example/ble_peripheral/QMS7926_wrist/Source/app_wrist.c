@@ -42,6 +42,7 @@
  * INCLUDES
  */
 
+#include <string.h>
 #include "bcomdef.h"
 #include "OSAL.h"
 #include "linkdb.h"
@@ -270,7 +271,7 @@ void on_kscan_evt(kscan_Evt_t* kscan_evt)
 
 void on_QMA7981_evt(QMA7981_ev_t* pev)
 {
-  if(pev->ev == wmi_event){
+  if(pev->ev == acc_event){
     wristProfileResponseAccelerationData((int16_t *)pev->data);
   }
 #if defined(QMA7981_STEPCOUNTER)
@@ -493,13 +494,22 @@ uint16 appWristProcEvt( uint8 task_id, uint16 events )
     //ui_batt_event(BATT_VOLTAGE);
     return ( events ^ BATT_VALUE_EVT);
   }
-  if( events & ACC_DATA_EVT)
+  if( events & ACC_DATA_REPORT_EVT)
   {
-    //QMA7981_fetch_data_handler();
+    QMA7981_report_acc();
+    return ( events ^ ACC_DATA_REPORT_EVT);
+  }
+  if( events & ACC_STEP_REPORT_EVT)
+  {
 #if defined(QMA7981_STEPCOUNTER)
-    QMA7981_fetch_stepcounter_handler();
+    QMA7981_report_stepcounter();
 #endif
-    return ( events ^ ACC_DATA_EVT);
+    return ( events ^ ACC_STEP_REPORT_EVT);
+  }
+  if( events & ACC_INT_EVT)
+  {
+    QMA7981_report_handup();
+    return ( events ^ ACC_INT_EVT);
   }
   if( events & WRIST_GPS_RX_TIMEOUT_EVT)
   {
