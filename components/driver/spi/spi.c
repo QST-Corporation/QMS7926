@@ -901,7 +901,7 @@ int hal_spis_bus_init(hal_spi_t* spi_ptr,spi_Cfg_t cfg)
 
   clk_gate_enable((MODULE_e)(MOD_SPI0 + spi_ptr->spi_index));
   
-  hal_spi_pin_init(spi_ptr,cfg.sclk_pin,cfg.ssn_pin,cfg.MOSI,cfg.MISO);
+  hal_spi_pin_init(spi_ptr,cfg.sclk_pin,cfg.ssn_pin,cfg.MISO,cfg.MOSI);
 
   hal_spi_slave_init(spi_ptr,cfg.baudrate, cfg.spi_scmod, cfg.spi_tmod);
   
