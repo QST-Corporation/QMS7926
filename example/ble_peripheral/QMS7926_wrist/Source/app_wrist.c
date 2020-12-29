@@ -302,7 +302,7 @@ void host_wakeup_evt(GPIO_Pin_e pin,IO_Wakeup_Pol_e type)
   hal_pwrmgr_lock(MOD_USR1);
   host_spi_deinit();
   host_spi_init();
-  osal_start_timerEx(AppWrist_TaskID, HOST_SPI_EVT, 16);
+  //osal_start_timerEx(AppWrist_TaskID, HOST_SPI_EVT, 16);
 }
 
 /*********************************************************************
@@ -456,11 +456,19 @@ uint16 appWristProcEvt( uint8 task_id, uint16 events )
     return ( events ^ START_DEVICE_EVT );
   }
 
-  if ( events & HOST_SPI_EVT )
+  if ( events & HOST_CMD_EVT )
   {
     host_spi_command_handler();
+    //hal_pwrmgr_unlock(MOD_USR1);
+    return ( events ^ HOST_CMD_EVT );
+  }
+
+  if ( events & SLAVE_TX_COMPLETED_EVT )
+  {
+    LOG("SLAVE_TX_COMPLETED_EVT\n");
+    host_wakeup_register(host_wakeup_evt);
     hal_pwrmgr_unlock(MOD_USR1);
-    return ( events ^ HOST_SPI_EVT );
+    return ( events ^ SLAVE_TX_COMPLETED_EVT );
   }
 
   if( events & TIMER_DT_EVT)

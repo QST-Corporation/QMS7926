@@ -49,6 +49,30 @@
 
 typedef void(* hostwakeCB_t)(GPIO_Pin_e pin,IO_Wakeup_Pol_e type);
 
+#define BUF_LEN             256
+
+typedef enum{
+    HOST_TX_COMPLETED = 1,
+    HOST_RX_COMPLETED,
+    HOST_RX_S
+}ev_t;
+
+typedef struct
+{
+    ev_t      ev;
+    uint16_t* data;
+}host_ev_t;
+
+typedef void(* host_spis_cb_t)(host_ev_t* pev);
+
+typedef struct _host_ctx_t{
+    bool            module_valid;
+    uint8_t         tx_buf[BUF_LEN];
+    uint8_t         rx_buf[BUF_LEN];
+    uint16_t        rx_len;
+    host_spis_cb_t  host_spis_cb;
+}host_ctx_t;
+
 typedef enum {
     HOST_STEP_COUNT = 0x01,  //0x01
     HOST_SLEEP_MONITOR,      //0x02
