@@ -35,6 +35,7 @@
 
 #define     QMA7981_STEPCOUNTER
 #define     QMA7981_HAND_UP_DOWN
+#define     SLEEP_AlGORITHM
 //#define     QMA7981_ANY_MOTION
 
 #define     QMA7981_SLAVE_ADDR              0x12
@@ -228,6 +229,42 @@
 #define QMA7981_RANGE_16G     0x08
 #define QMA7981_RANGE_32G     0x0f
 
+#ifdef SLEEP_AlGORITHM
+#define QST_SLEEP_TIMER_RATIO		2			// timer 1 second
+#define QST_SLEEP_TIMER_CYC			60			// timer cycle one minute
+#define QST_SLEEP_FIFO_LEN                  32
+#define QST_SLEEP_FIFO_SET_INTERVAL         62	// 2s to sample 32 group data
+#define QST_SLEEP_LIGHTSLEEP_CONTINUE_NUM			3	// 6  ���ѵ�ǳ˯3���� 6~8
+#define QST_SLEEP_DEEPSLEEP_CONTINUE_NUM			10	// 20  ǳ˯����˯��ʱ��20~30
+
+#define QST_SLEEP_RECORD_LEN						1000
+#define QST_SLEEP_RECORD_COUNT_MIN					8
+
+#define QST_SLEEP_MONTION_THRESHOLD					9.0f
+#define QST_SLEEP_BIGMONTION_THRESHOLD				200.0f
+//small motion
+#define QST_SLEEP_MOTION_LIGHT_THRESHOLD			5.0
+#define QST_SLEEP_MOTION_AWAKE_THRESHOLD			17.0	//15.0 
+//small motion
+//big motion
+#define QST_SLEEP_BIGMOTION_LIGHT_THRESHOLD			2.0 
+#define QST_SLEEP_BIGMOTION_AWAKE_THRESHOLD			8.0 
+// big motion  threshol
+#define  STEPCOUNTER_THRESHOLD_REG_ENTRY_SLEEP      Step_SENSITIVITY //�Ʋ���������  0x13�Ĵ�����ֵ
+#define  STEPCOUNTER_THRESHOLD_REG_QUIT_SLEEP       Step_SENSITIVITY //�Ʋ���������  0x13�Ĵ�����ֵ
+typedef enum
+{
+	QST_SLEEP_NONE,
+	QST_SLEEP_AWAKE = 0x01,
+	QST_SLEEP_LIGHT = 0x02,
+	QST_SLEEP_DEEP = 0x03,
+	QST_SLEEP_UNKNOW = 0xff,
+
+	QST_SLEEP_TOTAL
+}qst_sleep_status;
+
+#endif
+
 
 enum{
 	handUp_event   = 0x01,	//hand raise
@@ -259,9 +296,15 @@ int QMA7981_init(QMA7981_evt_hdl_t evt_hdl);
 #if defined(QMA7981_STEPCOUNTER)
 void QMA7981_clear_step(void);
 uint32_t QMA7981_read_stepcounter(void);
-void QQMA7981_step_report_start(uint32_t report_intval_ms);
-void QQMA7981_step_report_stop(void);
+void QMA7981_step_report_start(uint32_t report_intval_ms);
+void QMA7981_step_report_stop(void);
 uint8_t QMA7981_report_stepcounter(void);
+#endif
+#ifdef SLEEP_AlGORITHM
+void qma7981_read_fifo(void);
+uint8_t qst_sleep_set(char enable);
+void qst_sleep_data_process(void);
+qst_sleep_status qst_sleep_get_status(void);
 #endif
 
 #endif   /* _QMA7981_H */

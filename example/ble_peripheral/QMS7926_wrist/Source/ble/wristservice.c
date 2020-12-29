@@ -370,13 +370,13 @@ static int cmd_acc_raw_notif_stop(const uint8* data, uint16 len)
 
 static int cmd_acc_step_notif_start(const uint8* data, uint16 len)
 {
-  QQMA7981_step_report_start(2000);
+  QMA7981_step_report_start(2000);
   return cmd_response_err(data, len, APP_SUCCESS);
 }
 
 static int cmd_acc_step_notif_stop(const uint8* data, uint16 len)
 {
-  QQMA7981_step_report_stop();
+  QMA7981_step_report_stop();
   return cmd_response_err(data, len, APP_SUCCESS);
 }
 

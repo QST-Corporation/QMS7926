@@ -69,7 +69,7 @@
 #define ACC_DATA_REPORT_EVT                     0x0100  //event for accelerator data change
 #define ACC_STEP_REPORT_EVT                     0x0200  //for accelerator step counter event
 #define WRIST_GPS_RX_TIMEOUT_EVT                0x0400  //for gps rx timeout event
-#define TIMER_KSCAN_DEBOUNCE_EVT                0x0800  //for keyscan debounce
+#define ACC_SLEEP_FIFO_SET_EVT                  0x0800  //for sleep fifo data read event
 #define SLAVE_TX_COMPLETED_EVT                  0x1000
 #define SLAVE_RX_COMPLETED_EVT                  0x2000
 #define TIMER_TEST_EVT                          0x4000  //for test

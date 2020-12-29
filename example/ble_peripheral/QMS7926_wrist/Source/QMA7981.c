@@ -562,13 +562,13 @@ void QMA7981_acc_report_stop(void)
     osal_stop_timerEx(AppWrist_TaskID, ACC_DATA_REPORT_EVT);
 }
 
-void QQMA7981_step_report_start(uint32_t report_intval_ms)
+void QMA7981_step_report_start(uint32_t report_intval_ms)
 {
     s_QMA7981_ctx.step_report_intval = report_intval_ms; //for timer reload
     osal_start_timerEx(AppWrist_TaskID, ACC_STEP_REPORT_EVT, report_intval_ms);
 }
 
-void QQMA7981_step_report_stop(void)
+void QMA7981_step_report_stop(void)
 {
     osal_stop_timerEx(AppWrist_TaskID, ACC_STEP_REPORT_EVT);
 }

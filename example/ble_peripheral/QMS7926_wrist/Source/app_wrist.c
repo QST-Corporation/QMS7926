@@ -338,53 +338,51 @@ void appWristInit( uint8 task_id )
     uint16 desired_slave_latency = DEFAULT_DESIRED_SLAVE_LATENCY;
     uint16 desired_conn_timeout = DEFAULT_DESIRED_CONN_TIMEOUT;
     uint8 peerPublicAddr[] = {
-			0x01,
-			0x02,
-			0x03,
-			0x04,
-			0x05,
-			0x06
-		};
+      0x01,
+      0x02,
+      0x03,
+      0x04,
+      0x05,
+      0x06
+    };
 
     GAPRole_SetParameter(GAPROLE_ADV_DIRECT_ADDR, sizeof(peerPublicAddr), peerPublicAddr);
     // set adv channel map
     GAPRole_SetParameter(GAPROLE_ADV_CHANNEL_MAP, sizeof(uint8), &advChnMap);        
-    
+
     // Set the GAP Role Parameters
     GAPRole_SetParameter( GAPROLE_ADVERT_ENABLED, sizeof( uint8 ), &initial_advertising_enable );
     GAPRole_SetParameter( GAPROLE_ADVERT_OFF_TIME, sizeof( uint16 ), &gapRole_AdvertOffTime );
-    
+
     GAPRole_SetParameter( GAPROLE_SCAN_RSP_DATA, sizeof ( scanData ), scanData );
     GAPRole_SetParameter( GAPROLE_ADVERT_DATA, sizeof( advertData ), advertData );
-    
+
     GAPRole_SetParameter( GAPROLE_PARAM_UPDATE_ENABLE, sizeof( uint8 ), &enable_update_request );
     GAPRole_SetParameter( GAPROLE_MIN_CONN_INTERVAL, sizeof( uint16 ), &desired_min_interval );
     GAPRole_SetParameter( GAPROLE_MAX_CONN_INTERVAL, sizeof( uint16 ), &desired_max_interval );
     GAPRole_SetParameter( GAPROLE_SLAVE_LATENCY, sizeof( uint16 ), &desired_slave_latency );
     GAPRole_SetParameter( GAPROLE_TIMEOUT_MULTIPLIER, sizeof( uint16 ), &desired_conn_timeout );
   }
-  
+
   // Set the GAP Characteristics
   GGS_SetParameter( GGS_DEVICE_NAME_ATT, GAP_DEVICE_NAME_LEN, attDeviceName );
-
 
   // Set advertising interval
   {
       uint16 advInt = 400;   // actual time = advInt * 625us
-  
       GAP_SetParamValue( TGAP_LIM_DISC_ADV_INT_MIN, advInt );
       GAP_SetParamValue( TGAP_LIM_DISC_ADV_INT_MAX, advInt );
       GAP_SetParamValue( TGAP_GEN_DISC_ADV_INT_MIN, advInt );
       GAP_SetParamValue( TGAP_GEN_DISC_ADV_INT_MAX, advInt );
   }
-  
+
   // Initialize GATT attributes
   GGS_AddService( GATT_ALL_SERVICES );         // GAP
   GATTServApp_AddService( GATT_ALL_SERVICES ); // GATT attributes
   DevInfo_AddService( );
   wristProfile_AddService(wristCB);
   ota_app_AddService();
-  
+
   app_datetime_init();
 
   // Setup a delayed profile startup
@@ -393,17 +391,7 @@ void appWristInit( uint8 task_id )
   host_wakeup_register(host_wakeup_evt);
   gps_uart_config(AppWrist_TaskID);
   //batt_init();
-	QMA7981_init(on_QMA7981_evt);
-  {
-//    kscan_Cfg_t kcfg;
-//    kcfg.ghost_key_state = NOT_IGNORE_GHOST_KEY;
-//    kcfg.key_rows = kscan_rows;
-//    kcfg.key_cols = kscan_cols;
-//    kcfg.interval = 50;
-//    kcfg.evt_handler = on_kscan_evt;
-    //hal_kscan_init(kcfg, AppWrist_TaskID, TIMER_KSCAN_DEBOUNCE_EVT);
-  }
-
+  QMA7981_init(on_QMA7981_evt);
 }
 
 /*********************************************************************
@@ -516,10 +504,12 @@ uint16 appWristProcEvt( uint8 task_id, uint16 events )
     gps_receive_handler();
     return ( events ^ WRIST_GPS_RX_TIMEOUT_EVT);
   }
-  if( events & TIMER_KSCAN_DEBOUNCE_EVT)
+  if( events & ACC_SLEEP_FIFO_SET_EVT)
   {
-    hal_kscan_timeout_handler();
-    return ( events ^ TIMER_KSCAN_DEBOUNCE_EVT);
+#ifdef SLEEP_AlGORITHM
+    qma7981_read_fifo();
+#endif
+    return ( events ^ ACC_SLEEP_FIFO_SET_EVT);
   }
 
   // Discard unknown events
