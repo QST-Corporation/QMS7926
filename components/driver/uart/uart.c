@@ -215,7 +215,9 @@ static void uart_hw_config(void)
   
   AP_UART0->MCR=0x0;
   AP_UART0->LCR=0x80;
-  AP_UART0->DLL=dll;   
+  //AP_UART0->DLL=dll;
+  AP_UART0->DLM = (dll & 0xFF00) >> 8;
+  AP_UART0->DLL = (dll & 0xFF);
   AP_UART0->LCR = 0x3;  //8bit, 1 stop no parity
   
   //set fifo
