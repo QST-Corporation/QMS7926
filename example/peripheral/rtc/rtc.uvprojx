@@ -476,6 +476,16 @@
           </Files>
         </Group>
         <Group>
+          <GroupName>datetime</GroupName>
+          <Files>
+            <File>
+              <FileName>rtc_datetime.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Source\datetime\rtc_datetime.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
           <GroupName>::CMSIS</GroupName>
         </Group>
         <Group>

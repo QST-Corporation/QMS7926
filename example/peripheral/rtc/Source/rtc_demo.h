@@ -48,11 +48,16 @@ extern "C"
 {
 #endif
 
+
+/*********************************************************************
+ * MACROS
+ */
+#define RTC_TIMER_DT_EVT                            0x0004  //for datetime sync
+
+
 /*********************************************************************
  * FUNCTIONS
  */
-void Timer_Demo_Init( uint8 task_id );
-uint16 Timer_Demo_ProcessEvent( uint8 task_id, uint16 events);
 
 void Rtc_Demo_Init( uint8 task_id );
 uint16 Rtc_ProcessEvent( uint8 task_id, uint16 events);

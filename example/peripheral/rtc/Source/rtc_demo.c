@@ -46,68 +46,11 @@
 #include "rtc_demo.h"
 #include "log.h"
 
-#include "gpio.h"
+#include "datetime/rtc_datetime.h"
 #include "clock.h"
 
 #include "pwrmgr.h"
 #include "error.h"
-#include "key.h"
-
-
-/*********************************************************************
- * timer_Task
- * Task timer sample code
- */
-static uint8 timer_TaskID; 
-#define TIMER_1S_ONCE                                0x0001
-#define TIMER_2S_CYCLE                               0x0004
-
-void Timer_Demo_Init( uint8 task_id ){
-  timer_TaskID = task_id;
-
-  osal_start_timerEx( timer_TaskID, TIMER_1S_ONCE , 1000);
-  osal_start_reload_timer( timer_TaskID, TIMER_2S_CYCLE , 2000);
-}
-
-uint16 Timer_Demo_ProcessEvent( uint8 task_id, uint16 events ){
-  static uint8 count1 = 0,count2 = 0;
-  static bool  timer_cycle_enable = TRUE;
-
-  if(task_id != timer_TaskID){
-    return 0;
-  }
-
-  if ( events & TIMER_1S_ONCE ){
-    LOG("1s:once only mode\n");
-    osal_start_timerEx( timer_TaskID, TIMER_1S_ONCE , 1000);
-    
-    if(timer_cycle_enable == FALSE){
-      if(++count1 >= 10 ){
-        osal_start_reload_timer( timer_TaskID, TIMER_2S_CYCLE , 2000);
-        
-        LOG("2s:recycle mode start\n");
-        timer_cycle_enable = TRUE;
-        count1 = 0;
-      }
-    }
-    return (events ^ TIMER_1S_ONCE);
-  }  
-
-    if ( events & TIMER_2S_CYCLE ){
-      LOG("2s:recycle mode\n");
-      if(++count2 >= 5 ){
-        osal_stop_timerEx(timer_TaskID, TIMER_2S_CYCLE);
-        
-        LOG("2s:recycle mode stop\n");
-        timer_cycle_enable = FALSE;
-        count2 = 0;
-      }
-      
-    return (events ^ TIMER_2S_CYCLE);
-  }  
-
-  return 0;
-}
 
 /*********************************************************************
  * Rtc_Task: RTC demo
@@ -119,12 +62,10 @@ void Rtc_Demo_Init(uint8 task_id)
 {
 
   Rtc_TaskID = task_id;
-  LOG("rtc demo start...\n");
+  LOG("RTC demo start...\n");
 
-  /*
-  1, remove onboard XTAL 32K, use the internal RCOSC 32K;
-  2, config the RTC clock as CLK_32K_XTAL, then check the RTC performence
-  */
+  rtc_datetime_init();
+  osal_start_timerEx(task_id, RTC_TIMER_DT_EVT, RTC_DATETIME_SYNC_INTERVAL);
 }
 
 uint16 Rtc_ProcessEvent( uint8 task_id, uint16 events )
@@ -133,18 +74,15 @@ uint16 Rtc_ProcessEvent( uint8 task_id, uint16 events )
   if(task_id != Rtc_TaskID){
     return 0;
   }
-/*
-  if( events & KEY_EVT_PRESS){
-    LOG("\n%-22s","KEY_EVT_PRESS:");
-      for (i = 0; i < KEY_NUM; ++i){
-      if(key_state.temp[i].info_inter & KEY_EVT_PRESS){
-        LOG("key:%d gpio:%d	",i,key_state.key[i].pin);
-        key_state.temp[i].info_inter &= ~KEY_EVT_PRESS;
-      }
-    }
-    return (events ^ KEY_EVT_PRESS);
+
+  if ( events & RTC_TIMER_DT_EVT ) {
+    rtc_datetime_sync_handler();
+    // reload datetime sync timer
+    osal_start_timerEx(task_id, RTC_TIMER_DT_EVT, RTC_DATETIME_SYNC_INTERVAL);
+
+    return (events ^ RTC_TIMER_DT_EVT);
   }
-*/
+
   // Discard unknown events
   return 0;
 }
