@@ -91,7 +91,7 @@ adc_Cfg_t adc_cfg = {
 	.channel = ADC_BIT(ADC_CH3P_P20)|ADC_BIT(ADC_CH2P_P14)|ADC_BIT(ADC_CH3N_P15),
 	.is_continue_mode = FALSE,
 	.is_differential_mode = 0x00,
-	.is_high_resolution = 0x7F,
+	.is_high_resolution = 0xFF,
 };
 
 /*********************************************************************

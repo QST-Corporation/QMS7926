@@ -117,8 +117,7 @@ static void hal_rfphy_init(void)
 }
 
 int  main(void)  
-{    
-   
+{     
     // init global configuration of SOC
     int rrn = __return_address();
 
@@ -130,12 +129,6 @@ int  main(void)
     hal_rfphy_init();  
 
     hal_init();
-    for(rrn = 0x11032000; rrn < 0x11052000; rrn += 4){
-        LOG("rdreg %x", rrn);
-        WaitMs(2);
-    }
-    LOG("Done!");
-    while(1);
     LOG("%x\n", rrn);
 	
     app_main();	
