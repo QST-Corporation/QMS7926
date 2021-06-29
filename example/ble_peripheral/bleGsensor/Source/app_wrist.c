@@ -55,14 +55,8 @@
 #include "peripheral.h"
 #include "gapbondmgr.h"
 #include "app_wrist.h"
-//#include "ui_page.h"
-//#include "ui_task.h"
-//#include "ui_display.h"
-//#include "touch_key.h"
-//#include "em70xx.h"
 //#include "KX023.h"
 //#include "battery.h"
-#include "led_light.h"
 #include "kscan.h"
 #include "log.h"
 
@@ -70,8 +64,6 @@
  * MACROS
  */
 
-// Convert BPM to RR-Interval for data simulation purposes
-#define HEARTRATE_BPM_TO_RR(bpm)              ((uint16) 60 * 1024 / (uint16) (bpm))
 
 /*********************************************************************
  * CONSTANTS
@@ -139,40 +131,21 @@ uint8 AppWrist_TaskID;   // Task ID for internal task/event processing
 static gaprole_States_t gapProfileState = GAPROLE_INIT;
 
 // GAP Profile - Name attribute for SCAN RSP data
-/*static uint8 scanData[] =
-{
-  0x10,   // length of this data
-  GAP_ADTYPE_LOCAL_NAME_COMPLETE,
-  'Q',
-  'S',
-  'T',
-  ' ',
-  ' ',
-  'W',
-  'r',
-  'i',
-  's',
-  't',
-  ' ',
-  'D',
-  'e',
-  'm',
-  'o',
-};*/
-
 static uint8 scanData[] =
 {
-  0xa,   // length of this data
+  0x0C,   // length of this data
   GAP_ADTYPE_LOCAL_NAME_COMPLETE,
   'Q',
   'S',
   'T',
-  'L',
-  'i',
-  'g',
-  'h',
-  't',
-  ' ',
+  '-',
+  'G',
+  's',
+  'e',
+  'n',
+  's',
+  'o',
+  'r',
 };
 
 
@@ -190,7 +163,7 @@ static uint8 advertData[] =
 };
 
 // Device name attribute value
-static uint8 attDeviceName[GAP_DEVICE_NAME_LEN] = "QSTLight ";
+static uint8 attDeviceName[GAP_DEVICE_NAME_LEN] = "QST-Gsensor ";
 
 // GAP connection handle
 static uint16 gapConnHandle;
@@ -226,97 +199,6 @@ static const gapBondCBs_t WristBondCB =
   NULL                    // Pairing state callback
 };
 
-
-
-//static KSCAN_ROWS_e kscan_rows[NUM_KEY_ROWS] = {KEY_ROW_P00,KEY_ROW_P02,KEY_ROW_P25,KEY_ROW_P18}; 
-//static KSCAN_COLS_e kscan_cols[NUM_KEY_COLS] = {KEY_COL_P01,KEY_COL_P03,KEY_COL_P24,KEY_COL_P20};
-
-
-
-//static void on_HeartRateValueUpdate(hr_ev_t* pev)
-//{
-//  switch(pev->ev){
-//  case HR_EV_HR_VALUE:
-//    {
-//      ui_ev_t ev = {
-//          .ev = UI_EV_HEARTRATE,
-//          .param = (uint16)pev->value,
-//          .data = NULL
-//      };
-//      wristProfileResponseHRValue(pev->value);
-//      ui_fsm_run(&ev);
-//    }
-//    break;
-//  case HR_EV_RAW_DATA:
-//    {
-//      wristProfileResponseHRRawData(pev->value, pev->data);
-//    }
-//    break;
-//  default:
-//    break;
-//  }
-//}
-
-
-
-
-
-
-
-
-
-//void on_touchKey(touch_evt_t key_evt)
-//{
-//  
-//  osal_set_event(AppWrist_TaskID, TOUCH_PRESS_EVT);
-//}
-
-//void on_kscan_evt(kscan_Evt_t* kscan_evt)
-//{
-//	uint8_t key[16];
-//  uint8_t r,c,k;
-//  osal_memset(key, 0, 16);
-//	LOG("KSE %d\n",kscan_evt->num);
-//	for(uint8_t i=0;i<kscan_evt->num;i++){
-//    k = kscan_evt->keys[i].type == KEY_PRESSED ? 1:2;
-//    r = kscan_evt->keys[i].row &0x7;
-//    c = kscan_evt->keys[i].col &0x7;
-//    key[i] = (k << 6)|(c << 3)| r;
-//	}
-//  wristProfileResponseKScan(kscan_evt->num, key);
-//}
-
-//void on_kx023_evt(kx023_ev_t* pev)
-//{
-//  int g_acc_value[3];
-//  if(pev->ev == wmi_event){
-//    int i;
-//    int gx = 0,gy = 0,gz = 0;
-//  	int16_t *acc_data = (int16_t *)pev->data;
-//    for(i = 0; i < pev->size/(sizeof(int16_t)*3); i++)
-//    {
-//      gx += (int)acc_data[0];
-//      gy += (int)acc_data[1];
-//      gz += (int)acc_data[2];
-//      acc_data+=3;
-//    }
-//    //LOG("X%d,Y%d,Z%d\n",gx,gy,gz);
-//    
-//    gx = gx*6/pev->size;
-//    gy = gy*6/pev->size;
-//    gz = gz*6/pev->size;
-//    //LOG("X%d,Y%d,Z%d\n",gx,gy,gz);
-//    g_acc_value[0] = gx;
-//    g_acc_value[1] = gy;
-//    g_acc_value[2] = gz;
-//    
-//    ui_accelerator_event(g_acc_value);
-//    wristProfileResponseAccelerationData(gx/4,gy/4,gz/4);
-//    
-//  }
-//}
-
-
 /*********************************************************************
  * PUBLIC FUNCTIONS
  */
@@ -339,7 +221,7 @@ static const gapBondCBs_t WristBondCB =
 void appWristInit( uint8 task_id )
 {
   AppWrist_TaskID = task_id;
-	LOG("\n\n\nappWristInit\n\n\n");
+	LOG("\nbleGsensorInit\n\n");
   // Setup the GAP Peripheral Role Profile
   {
     uint8 initial_advertising_enable = TRUE;
@@ -407,28 +289,6 @@ void appWristInit( uint8 task_id )
 
   // Setup a delayed profile startup
   osal_set_event( AppWrist_TaskID, START_DEVICE_EVT );
-  light_init();
-  //hal_gpio_pull_set(P31, PULL_DOWN);
-  //light_ctrl(0,40);
-  //light_ctrl(1,40);
-  //light_ctrl(2,80);
-//  light_ctrl(0,0);
-//  light_ctrl(1,0);
-//  light_ctrl(2,0);
-//  em70xx_register(on_HeartRateValueUpdate);
-//  touch_init(on_touchKey);
-//  ui_init();
-//  batt_init();
-//	kx023_init(on_kx023_evt);
-//  {
-//    kscan_Cfg_t kcfg;
-//    kcfg.ghost_key_state = NOT_IGNORE_GHOST_KEY;
-//    kcfg.key_rows = kscan_rows;
-//    kcfg.key_cols = kscan_cols;
-//    kcfg.interval = 50;
-//    kcfg.evt_handler = on_kscan_evt;
-//    //hal_kscan_init(kcfg, AppWrist_TaskID, TIMER_KSCAN_DEBOUNCE_EVT);
-//  }
 
 }
 
@@ -465,8 +325,6 @@ uint16 appWristProcEvt( uint8 task_id, uint16 events )
     // return unprocessed events
     return (events ^ SYS_EVENT_MSG);
   }
- 
-  
 
   if ( events & START_DEVICE_EVT )
   {
@@ -479,63 +337,6 @@ uint16 appWristProcEvt( uint8 task_id, uint16 events )
     return ( events ^ START_DEVICE_EVT );
   }
 
-  if( events & TIMER_DT_EVT)
-  {
-    app_datetime_sync_handler();
-    return ( events ^ TIMER_DT_EVT );
-  }
-//  if( events & TIMER_UI_EVT)
-//  {
-//    ui_page_timer_evt(NULL);
-
-//    return ( events ^ TIMER_UI_EVT );
-//  }
-//  if( events & TOUCH_PRESS_EVT)
-//  {
-//    ui_key_evt(NULL);
-
-//    return ( events ^ TOUCH_PRESS_EVT );
-//  }
-//  if( events & TIMER_HR_EVT)
-//  {
-//    em70xx_timer_handler();
-//    return ( events ^ TIMER_HR_EVT);
-//  }
-//  
-//  if( events & TIMER_BATT_EVT)
-//  {
-//    batt_meas_timeout_handler();
-//    return ( events ^ TIMER_BATT_EVT);
-//  }
-//  if( events & BATT_CHARGE_EVT)
-//  {
-//    batt_evt_t evt = batt_charge_detect() ? BATT_CHARGE_PLUG : BATT_CHARGE_UNPLUG;
-//    LOG("batt_evt_t %d\n", evt);
-//    ui_batt_event(evt);
-//    return ( events ^ BATT_CHARGE_EVT);
-//  }
-//  if( events & BATT_VALUE_EVT)
-//  {
-//    ui_batt_event(BATT_VOLTAGE);
-//    return ( events ^ BATT_VALUE_EVT);
-//  }
-//  if( events & ACC_DATA_EVT)
-//  {
-//		drv_kx023_event_handle();
-//    return ( events ^ ACC_DATA_EVT);
-//  }
-  
-  if( events & TIMER_LIGHT_EVT)
-  {
-		light_timeout_handle();
-    return ( events ^ TIMER_LIGHT_EVT);
-  }
-  
-//  if( events & TIMER_KSCAN_DEBOUNCE_EVT)
-//  {
-//    hal_kscan_timeout_handler();
-//    return ( events ^ TIMER_KSCAN_DEBOUNCE_EVT);
-//  }
   // Discard unknown events
   return 0;
 }
@@ -566,7 +367,7 @@ static void appWristProcOSALMsg( osal_event_hdr_t *pMsg )
  */
 static void WristGapStateCB( gaprole_States_t newState )
 {
-  LOG("WristGapStateCB: %d", newState);
+  LOG("GapStateCB: %d\n", newState);
   // if connected
   if (newState == GAPROLE_CONNECTED)
   {
