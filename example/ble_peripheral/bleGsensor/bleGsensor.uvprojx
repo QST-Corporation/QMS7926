@@ -337,7 +337,7 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls>-DADV_NCONN_CFG=0x01   -DADV_CONN_CFG=0x02   -DSCAN_CFG=0x04    -DINIT_CFG=0x08   -DBROADCASTER_CFG=0x01 -DOBSERVER_CFG=0x02   -DPERIPHERAL_CFG=0x04   -DCENTRAL_CFG=0x08   -DHOST_CONFIG=0x4  </MiscControls>
-              <Define>CFG_CP CFG_QFN32 CFG_SLEEP_MODE=PWR_MODE_NO_SLEEP DEBUG_INFO=1 USE_SYS_TICK</Define>
+              <Define>CFG_CP CFG_QFN32 CFG_SLEEP_MODE=PWR_MODE_NO_SLEEP DEBUG_INFO=1</Define>
               <Undefine></Undefine>
               <IncludePath>.\Source;..\..\..\components\inc;..\..\..\components\common;..\..\..\components\osal\include;..\..\..\components\ble\include;..\..\..\components\ble\hci;..\..\..\components\ble\host;..\..\..\components\ble\controller\include;..\..\..\components\profiles\DevInfo;..\..\..\components\profiles\GATT;..\..\..\components\profiles\SimpleProfile;..\..\..\components\profiles\Roles;..\..\..\components\profiles\ota_app;..\..\..\components\profiles\hrs;..\..\..\components\driver\common;..\..\..\components\driver\log;..\..\..\components\driver\gpio;..\..\..\components\driver\uart;..\..\..\components\driver\i2c;..\..\..\components\driver\adc;..\..\..\components\driver\clock;..\..\..\components\driver\pwm;..\..\..\components\driver\pwrmgr;..\..\..\components\driver\kscan;..\..\..\components\driver\flash;..\..\..\components\driver\spi;..\..\..\components\driver\i2c;..\..\..\components\driver\watchdog;..\..\..\components\driver\timer;..\..\..\components\libraries\console;..\..\..\components\libraries\datetime;..\..\..\lib;.\Source;.\Source\ui;.\Source\ble;.\Source\epticore</IncludePath>
             </VariousControls>
@@ -467,6 +467,11 @@
               <FileName>wristservice.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Source\ble\wristservice.c</FilePath>
+            </File>
+            <File>
+              <FileName>QMA7981.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Source\QMA7981.c</FilePath>
             </File>
           </Files>
         </Group>

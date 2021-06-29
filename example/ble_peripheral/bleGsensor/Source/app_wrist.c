@@ -55,7 +55,7 @@
 #include "peripheral.h"
 #include "gapbondmgr.h"
 #include "app_wrist.h"
-//#include "KX023.h"
+#include "QMA7981.h"
 //#include "battery.h"
 #include "kscan.h"
 #include "log.h"
@@ -203,6 +203,23 @@ static const gapBondCBs_t WristBondCB =
  * PUBLIC FUNCTIONS
  */
 
+void QMA7981_report_evt(QMA7981_ev_t* pev)
+{
+  if(pev->ev == wmi_event){
+    int gx = 0,gy = 0,gz = 0;
+  	int32_t *acc_data = (int32_t *)pev->data;
+    //LOG("%s 2\n",__func__);
+    gx = acc_data[0];
+    gy = acc_data[1];
+    gz = acc_data[2];
+    LOG("%8d,%8d,%8d\n",gx,gy,gz);
+
+    if(gx==0 && gy==0 && gz==0)
+      return;
+    wristProfileResponseAccelerationData(gx,gy,gz);
+  }
+}
+
 /*********************************************************************
  * @fn      HeartRate_Init
  *
@@ -284,12 +301,12 @@ void appWristInit( uint8 task_id )
   DevInfo_AddService( );
   ota_app_AddService();
   wristProfile_AddService(wristCB);
-  
+
   app_datetime_init();
+  QMA7981_init(QMA7981_report_evt);
 
   // Setup a delayed profile startup
   osal_set_event( AppWrist_TaskID, START_DEVICE_EVT );
-
 }
 
 /*********************************************************************
@@ -335,6 +352,12 @@ uint16 appWristProcEvt( uint8 task_id, uint16 events )
     GAPBondMgr_Register( (gapBondCBs_t *) &WristBondCB );
     
     return ( events ^ START_DEVICE_EVT );
+  }
+
+  if( events & ACC_DATA_EVT)
+  {
+    drv_QMA7981_event_handle();
+    return ( events ^ ACC_DATA_EVT);
   }
 
   // Discard unknown events

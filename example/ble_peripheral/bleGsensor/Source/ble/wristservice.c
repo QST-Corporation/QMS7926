@@ -216,7 +216,7 @@ static wristServiceCB_t wristServiceCB = NULL;
 
 //static wristService_t sWristService;
 
-static bool sNotifyAccelerationDataFlag = FALSE;
+static bool sNotifyAccelerationDataFlag = TRUE;//FALSE;
 //static char	s_msg_notif_data[MSG_NOTIF_SIZE];
 
 
@@ -846,7 +846,7 @@ static int wristProfile_Notify(attHandleValueNoti_t *pNoti )
 
   GAPRole_GetParameter(GAPROLE_CONNHANDLE, &connHandle);
   value = GATTServApp_ReadCharCfg( connHandle, wristProfileCmdCCC);
-  LOG("GATT_Notification: %x\n", value);
+  //LOG("GATT_Notification: %x\n", value);
     
   // If notifications enabled
   if ( value & GATT_CLIENT_CFG_NOTIFY )

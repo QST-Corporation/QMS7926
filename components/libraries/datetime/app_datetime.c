@@ -195,14 +195,14 @@ static void app_datetime_adjust_baseline(struct tm* datetm)
 	uint32_t ticks;
 	timer_cnt_get(&ticks);
 	tmstamp = (uint64_t)mktime(datetm);
-	LOG("%x\n",(uint32_t)tmstamp);
+	//LOG("%x\n",(uint32_t)tmstamp);
 	tmstamp = tmstamp*TM_RATE;
 	s_stm_cfg.tm_base = tmstamp - ticks;
 	s_stm_cfg.snapshot = ticks;
 	
-	LOG("app_datetime_adjust_baseline:");
-	print_hex((uint8_t*)&s_stm_cfg, sizeof(s_stm_cfg));
-	LOG("\n");
+	//LOG("app_datetime_adjust_baseline:");
+	//print_hex((uint8_t*)&s_stm_cfg, sizeof(s_stm_cfg));
+	//LOG("\n");
 }
 
 
