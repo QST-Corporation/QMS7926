@@ -205,7 +205,7 @@ static const gapBondCBs_t WristBondCB =
 
 void QMA7981_report_evt(QMA7981_ev_t* pev)
 {
-  if(pev->ev == wmi_event){
+  if(pev->ev == acc_event){
     int gx = 0,gy = 0,gz = 0;
   	int32_t *acc_data = (int32_t *)pev->data;
     //LOG("%s 2\n",__func__);
@@ -218,6 +218,21 @@ void QMA7981_report_evt(QMA7981_ev_t* pev)
       return;
     wristProfileResponseAccelerationData(gx,gy,gz);
   }
+#if defined(QMA7981_STEPCOUNTER)
+  else if(pev->ev == step_event){
+    uint32_t stepNumber;
+    osal_memcpy(&stepNumber, pev->data, sizeof(uint32_t));
+    LOG(" step number: %d\n", stepNumber);
+  }
+#endif
+#if defined(QMA7981_HAND_UP_DOWN)
+  else if (pev->ev == handUp_event) {
+    LOG(" hand raise!\n");
+  }
+  else if (pev->ev == handDown_event) {
+    LOG(" hand down!\n");
+  }
+#endif
 }
 
 /*********************************************************************
@@ -354,10 +369,22 @@ uint16 appWristProcEvt( uint8 task_id, uint16 events )
     return ( events ^ START_DEVICE_EVT );
   }
 
-  if( events & ACC_DATA_EVT)
+  if( events & ACC_DATA_REPORT_EVT)
   {
-    drv_QMA7981_event_handle();
-    return ( events ^ ACC_DATA_EVT);
+    QMA7981_report_acc();
+    return ( events ^ ACC_DATA_REPORT_EVT);
+  }
+  if( events & ACC_STEP_REPORT_EVT)
+  {
+#if defined(QMA7981_STEPCOUNTER)
+    QMA7981_report_stepcounter();
+#endif
+    return ( events ^ ACC_STEP_REPORT_EVT);
+  }
+  if( events & ACC_INT_EVT)
+  {
+    QMA7981_report_handup();
+    return ( events ^ ACC_INT_EVT);
   }
 
   // Discard unknown events
