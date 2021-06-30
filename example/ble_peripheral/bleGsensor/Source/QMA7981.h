@@ -286,6 +286,7 @@ uint8_t QMA7981_report_acc(void);
 void QMA7981_report_handup(void);
 void QMA7981_deep_sleep(void);
 void QMA7981_wake_up(void);
+void QMA7981_disable(void);
 int QMA7981_init(QMA7981_evt_hdl_t evt_hdl);
 #if defined(QMA7981_STEPCOUNTER)
 void QMA7981_clear_step(void);

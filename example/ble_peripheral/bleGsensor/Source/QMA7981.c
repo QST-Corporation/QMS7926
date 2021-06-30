@@ -58,19 +58,19 @@ typedef struct _QMA7981_ctx_t{
 // store come from pedometer parm config
 static QMA7981_ctx_t s_QMA7981_ctx;
 uint16_t g_qma7981_lsb_1g;
-/*	
-qma7981 odr setting
-0x10<2:0>		ODR(Hz)				Time(ms)	|	RANGE 0x0f<3:0>
-000				43.3125				23.088		|	0001	2g  		244ug/LSB
-001				86.4453				11.568		|	0010	4g  		488ug/LSB
-002				172.1763			5.808		|	0100	8g  		977ug/LSB
-003				341.5300			2.928		|	1000	16g  	1.95mg/LSB
-004				672.0430			1.488		|	1111	32g  	3.91mg/LSB
-005				32.5013				30.768		|	Others	2g  		244ug/LSB
-006				129.3995			7.728		|
-007				257.2016			3.888		|
-*/
 
+/*  
+qma7981 odr setting
+0x10<2:0>    ODR(Hz)      Time(ms)  |  RANGE 0x0f<3:0>
+000        43.3125        23.088    |  0001  2g     244ug/LSB
+001        86.4453        11.568    |  0010  4g     488ug/LSB
+002        172.1763       5.808     |  0100  8g     977ug/LSB
+003        341.5300       2.928     |  1000  16g    1.95mg/LSB
+004        672.0430       1.488     |  1111  32g    3.91mg/LSB
+005        32.5013        30.768    |  Others  2g   244ug/LSB
+006        129.3995       7.728     |
+007        257.2016       3.888     |
+*/
 const uint8_t qma7981_init_tbl[][2] = 
 {
   {0x11, 0x80},
@@ -158,7 +158,7 @@ static void QMA7981_int_handler(GPIO_Pin_e pin,IO_Wakeup_Pol_e type)
       //bsp_stop_timer(0);
       QST_i2c_read(pi2c, 0x1a, &reg_0x1a, 1);
       reg_0x1a &= 0x7f;
-      QST_i2c_write(pi2c, 0x1a, reg_0x1a);		// disable nomotion
+      QST_i2c_write(pi2c, 0x1a, reg_0x1a);    // disable nomotion
       int_type = 2;
       //LOG(" no motion!\n");
     }
@@ -225,15 +225,15 @@ static void QMA7981_set_hand_up_down(void* pi2c, int8_t layout)
     uint8_t reg_0x1e = 0;
     uint8_t reg_0x34 = 0;
     uint8_t yz_th_sel = 4;
-    int8_t y_th = -3; //-2;				// -16 ~ 15
-    uint8_t x_th = 6;		// 0--7.5
-    int8_t z_th = 6;				// -8--7
+    int8_t y_th = -3; //-2;        // -16 ~ 15
+    uint8_t x_th = 6;    // 0--7.5
+    int8_t z_th = 6;        // -8--7
 
-#if 1//defined(QMA7981_SWAP_XY)	// swap xy
+#if 1//defined(QMA7981_SWAP_XY)  // swap xy
     if(layout%2)
     {
       QST_i2c_read(pi2c, 0x42, &reg_0x42, 1);
-      reg_0x42 |= 0x80;		// 0x42 bit 7 swap x and y
+      reg_0x42 |= 0x80;    // 0x42 bit 7 swap x and y
       QST_i2c_write(pi2c, 0x42, reg_0x42);
     }
 #endif
@@ -243,7 +243,7 @@ static void QMA7981_set_hand_up_down(void* pi2c, int8_t layout)
       z_th = 3;
       if((layout == 2)||(layout == 3))
         y_th = 3; 
-      else if((layout == 0)||(layout == 1))	
+      else if((layout == 0)||(layout == 1))  
         y_th = -3;
     }
     else if((layout >=4) && (layout<=7))
@@ -252,12 +252,12 @@ static void QMA7981_set_hand_up_down(void* pi2c, int8_t layout)
       
       if((layout == 6)||(layout == 7))
         y_th = 3; 
-      else if((layout == 4)||(layout == 5))	
+      else if((layout == 4)||(layout == 5))  
         y_th = -3;
     }
 
-    // 0x34 YZ_TH_SEL[7:5]	Y_TH[4:0], default 0x9d  (YZ_TH_SEL   4   9.0 m/s2 | Y_TH  -3  -3 m/s2)
-    //QST_i2c_write(pi2c, 0x34, 0x9d);	//|yz|>8 m/s2, y>-3 m/m2
+    // 0x34 YZ_TH_SEL[7:5]  Y_TH[4:0], default 0x9d  (YZ_TH_SEL   4   9.0 m/s2 | Y_TH  -3  -3 m/s2)
+    //QST_i2c_write(pi2c, 0x34, 0x9d);  //|yz|>8 m/s2, y>-3 m/m2
     if((y_th&0x80))
     {
       reg_0x34 |= yz_th_sel<<5;
@@ -265,17 +265,17 @@ static void QMA7981_set_hand_up_down(void* pi2c, int8_t layout)
       QST_i2c_write(pi2c, 0x34, reg_0x34);
     }
     else
-    {	
+    {  
       reg_0x34 |= yz_th_sel<<5;
       reg_0x34 |= y_th;
-      QST_i2c_write(pi2c, 0x34, reg_0x34);	//|yz|>8m/s2, y<3 m/m2
+      QST_i2c_write(pi2c, 0x34, reg_0x34);  //|yz|>8m/s2, y<3 m/m2
     }
-    //Z_TH<7:4>: -8~7, LSB 1 (unit : m/s2)	X_TH<3:0>: 0~7.5, LSB 0.5 (unit : m/s2) 
-    //QST_i2c_write(pi2c, 0x1e, 0x68);	//6 m/s2, 4 m/m2
+    //Z_TH<7:4>: -8~7, LSB 1 (unit : m/s2)  X_TH<3:0>: 0~7.5, LSB 0.5 (unit : m/s2) 
+    //QST_i2c_write(pi2c, 0x1e, 0x68);  //6 m/s2, 4 m/m2
 
-    QST_i2c_write(pi2c, 0x2a, (0x19|(0x02<<6)));			// 12m/s2 , 0.5m/s2
+    QST_i2c_write(pi2c, 0x2a, (0x19|(0x02<<6)));      // 12m/s2 , 0.5m/s2
     QST_i2c_write(pi2c, 0x2b, (0x7c|(0x03>>2)));
-    //QST_i2c_write(pi2c, 0x2a, (0x19|(0x02<<6)));			// 12m/s2 , 0.5m/s2
+    //QST_i2c_write(pi2c, 0x2a, (0x19|(0x02<<6)));      // 12m/s2 , 0.5m/s2
     //QST_i2c_write(pi2c, 0x2b, (0x7c|(0x02)));
     QST_i2c_write(pi2c, 0x35, (50));//50ms
     //QST_i2c_read(pi2c, 0x1e, &reg_0x1e, 1);
@@ -295,16 +295,23 @@ static void QMA7981_set_hand_up_down(void* pi2c, int8_t layout)
 #endif
 
 /*!
-*	@brief this funtion is used for initialize QMA7981 register,and initialize GPIOE，and regeister event handler
+*  @brief this funtion is used for initialize QMA7981 register,and initialize GPIOE，and regeister event handler
 *
 */
 static int QMA7981_config(void)
 {
-    uint8_t  chip_id;
-    uint8_t reg_0x10 = 0, reg_0x11 = 0x80;
+    uint8_t chip_id, regCount, index;
+    uint8_t dieId_L, dieId_H, waferId;
+    uint8_t reg_0x10 = 0, reg_0x11 = 0;
+    uint8_t reg_0x16 = 0, reg_0x18 = 0, reg_0x19 = 0, reg_0x1a = 0;
+#if defined(QMA7981_STEPCOUNTER)
+    uint8_t reg_0x14 = 0, reg_0x15 = 0;
+#endif
+#if defined(QMA7981_ANY_MOTION)||defined(QMA7981_NO_MOTION)
+    uint8_t reg_0x2c = 0;
+#endif
     void* pi2c = QST_i2c_init();
     /***************verify proper integraterd circuit******************************/
-    QST_i2c_write(pi2c, 0x11, reg_0x11); //enable mclk
     QST_i2c_read(pi2c, QMA7981_CHIP_ID, &chip_id, 1);
     if(chip_id != 0xE7) {
       LOG("ERR: read QMA7981 chin id(0x%x) failed!\n", chip_id);
@@ -313,12 +320,7 @@ static int QMA7981_config(void)
     }
     QMA7981_delay_ms(50);
 
-#if defined(QMA7981_STEPCOUNTER)
-    uint8_t reg_0x14 = 0, reg_0x15 = 0;
-#endif
-    uint8_t reg_0x16 = 0, reg_0x18 = 0, reg_0x19 = 0, reg_0x1a = 0;
-    uint8_t regCount = sizeof(qma7981_init_tbl)/sizeof(qma7981_init_tbl[0]);
-    uint8_t index;
+    regCount = sizeof(qma7981_init_tbl)/sizeof(qma7981_init_tbl[0]);
     for (index=0; index<regCount; index++) {
       if (qma7981_init_tbl[index][0] == QMA7981_DELAY) {
           QMA7981_delay_ms(qma7981_init_tbl[index][1]);
@@ -326,13 +328,25 @@ static int QMA7981_config(void)
           QST_i2c_write(pi2c, qma7981_init_tbl[index][0], qma7981_init_tbl[index][1]);
       }
     }
-
     QMA7981_set_range(pi2c, QMA7981_RANGE_4G);
+
+    QST_i2c_read(pi2c, 0x47, &dieId_L, 1);
+    QST_i2c_read(pi2c, 0x48, &dieId_H, 1);
+    QST_i2c_read(pi2c, 0x5a, &waferId, 1);
+    LOG("QMA7981 DieId_L:%d  DieId_H:%d  WaferId:%d \n", dieId_L, dieId_H, waferId&0x1f);
+
     QST_i2c_read(pi2c, 0x16, &reg_0x16, 1);
     QST_i2c_read(pi2c, 0x18, &reg_0x18, 1);
     QST_i2c_read(pi2c, 0x19, &reg_0x19, 1);
     QST_i2c_read(pi2c, 0x1a, &reg_0x1a, 1);
+#if defined(QMA7981_ANY_MOTION)||defined(QMA7981_NO_MOTION)
+    QST_i2c_read(pi2c, 0x2c, &reg_0x2c, 1);
+#endif
 
+    //0xe0  [MCLK/7695]
+    //0xe1  [MCLK/3855]
+    //0xe2  [MCLK/1935]
+    //0xe3  [MCLK/975]
     reg_0x10 = 0xe1;
     QST_i2c_write(pi2c, 0x10, reg_0x10);
     reg_0x11 = 0x80;
@@ -358,109 +372,181 @@ static int QMA7981_config(void)
         reg_0x15 = (reg_0x15>>2);
       }
     }
-    else if(reg_0x11 == 0x81)	// 333K
+    else if(reg_0x11 == 0x81)  // 333K
     {
       reg_0x10 = 0xe1;
       QST_i2c_write(pi2c, 0x10, reg_0x10);
 
-      reg_0x14 = (((STEP_W_TIME_L*100)/581)+1);	// odr 172.0930233 hz, 5.81ms
+      reg_0x14 = (((STEP_W_TIME_L*100)/581)+1);  // odr 172.0930233 hz, 5.81ms
       reg_0x15 = (((STEP_W_TIME_H*100)/581)+1);
-      if(reg_0x10 == 0xe1)	// 86.38132296 hz
+      if(reg_0x10 == 0xe1)  // 86.38132296 hz
       {
         reg_0x14 = (reg_0x14>>1);
         reg_0x15 = (reg_0x15>>1);
       }
-      else if(reg_0x10 == 0xe0)		// 43.2748538
+      else if(reg_0x10 == 0xe0)    // 43.2748538
       {
         reg_0x14 = (reg_0x14>>2);
         reg_0x15 = (reg_0x15>>2);
       }
     }
-    else if(reg_0x11 == 0x82)		// 200K
+    else if(reg_0x11 == 0x82)    // 200K
     {
       reg_0x10 = 0xe2;
       QST_i2c_write(pi2c, 0x10, reg_0x10);
 
-      reg_0x14 = (((STEP_W_TIME_L*100)/967)+1);	// 103.3591731 hz, 9.675 ms
+      reg_0x14 = (((STEP_W_TIME_L*100)/967)+1);  // 103.3591731 hz, 9.675 ms
       reg_0x15 = (((STEP_W_TIME_H*100)/967)+1);
       if(reg_0x10 == 0xe1)
       {
-        reg_0x14 = (reg_0x14>>1);		// 51.88067445 hz
+        reg_0x14 = (reg_0x14>>1);    // 51.88067445 hz
         reg_0x15 = (reg_0x15>>1);
       }
       else if(reg_0x10 == 0xe3)
       {
-        reg_0x14 = (reg_0x14<<1);		// 205.1282051 hz				
+        reg_0x14 = (reg_0x14<<1);    // 205.1282051 hz
         reg_0x15 = (reg_0x15<<1);
       }
     }
-    else if(reg_0x11 == 0x83)		// 100K
+    else if(reg_0x11 == 0x83)    // 100K
     {
       reg_0x10 = 0xe3;
       QST_i2c_write(pi2c, 0x10, reg_0x10);
 
-      reg_0x14 = (((STEP_W_TIME_L*100)/975)+1);	// 102.5641026 hz, 9.75 ms
+      reg_0x14 = (((STEP_W_TIME_L*100)/975)+1);  // 102.5641026 hz, 9.75 ms
       reg_0x15 = (((STEP_W_TIME_H*100)/975)+1);
       if(reg_0x10 == 0xe2)
       {
-        reg_0x14 = (reg_0x14>>1);		// 51.67958656 hz
+        reg_0x14 = (reg_0x14>>1);    // 51.67958656 hz
         reg_0x15 = (reg_0x15>>1);
       }
     }
-    else if(reg_0x11 == 0x84)		// 50K
+    else if(reg_0x11 == 0x84)    // 50K
     {
       reg_0x10 = 0xe3;
       QST_i2c_write(pi2c, 0x10, reg_0x10);
-      reg_0x14 = (((STEP_W_TIME_L)/20)+1);	// 50hz
+      reg_0x14 = (((STEP_W_TIME_L)/20)+1);  // 50hz
       reg_0x15 = (((STEP_W_TIME_H)/20)+1);
     }
 
     QST_i2c_write(pi2c, 0x12, 0x94);
-    QST_i2c_write(pi2c, 0x13, 0x80);		// clear step
-    QST_i2c_write(pi2c, 0x13, 0x7f);		// 0x7f(1/16) 0x00(1/8)
-    QST_i2c_write(pi2c, 0x14, reg_0x14);		// STEP_TIME_LOW<7:0>*(1/ODR) 
-    QST_i2c_write(pi2c, 0x15, reg_0x15);		// STEP_TIME_UP<7:0>*8*(1/ODR) 
+    QST_i2c_write(pi2c, 0x13, 0x80);    // clear step
+    QST_i2c_write(pi2c, 0x13, 0x7f);    // 0x7f(1/16) 0x00(1/8)
+    QST_i2c_write(pi2c, 0x14, reg_0x14);    // STEP_TIME_LOW<7:0>*(1/ODR) 
+    QST_i2c_write(pi2c, 0x15, reg_0x15);    // STEP_TIME_UP<7:0>*8*(1/ODR) 
 
-    //QST_i2c_write(pi2c, 0x1f, 0x09);		// 0 step
-    //QST_i2c_write(pi2c, 0x1f, 0x29);		// 4 step
-    //QST_i2c_write(pi2c, 0x1f, 0x49);		// 8 step
-    //QST_i2c_write(pi2c, 0x1f, 0x69);		// 12 step
-    //QST_i2c_write(pi2c, 0x1f, 0x89);		// 16 step
-    QST_i2c_write(pi2c, 0x1f, 0xa9);		// 24 step
-    //QST_i2c_write(pi2c, 0x1f, 0xc9);		// 32 step
-    //QST_i2c_write(pi2c, 0x1f, 0xe9);		// 40 step
+    //QST_i2c_write(pi2c, 0x1f, 0x09);    // 0 step
+    //QST_i2c_write(pi2c, 0x1f, 0x29);    // 4 step
+    //QST_i2c_write(pi2c, 0x1f, 0x49);    // 8 step
+    //QST_i2c_write(pi2c, 0x1f, 0x69);    // 12 step
+    //QST_i2c_write(pi2c, 0x1f, 0x89);    // 16 step
+    QST_i2c_write(pi2c, 0x1f, 0xa9);    // 24 step
+    //QST_i2c_write(pi2c, 0x1f, 0xc9);    // 32 step
+    //QST_i2c_write(pi2c, 0x1f, 0xe9);    // 40 step
+
+  // step int
+#if defined(QMA7981_STEP_INT)
+    reg_0x16 |= 0x08;
+    reg_0x19 |= 0x08;
+    QST_i2c_write(pi2c, 0x16, reg_0x16);
+    QST_i2c_write(pi2c, 0x19, reg_0x19);
+#endif
+#if defined(QMA7981_SIGNIFICANT_STEP)
+    QST_i2c_write(pi2c, 0x1d, 0x26);    //every 30 step
+    reg_0x16 |= 0x40;
+    reg_0x19 |= 0x40;
+    QST_i2c_write(pi2c, 0x16, reg_0x16);
+    QST_i2c_write(pi2c, 0x19, reg_0x19);
+#endif
+#endif
+
+//RANGE<3:0> Acceleration range Resolution
+//0001 2g 244ug/LSB
+//0010 4g 488ug/LSB
+//0100 8g 977ug/LSB
+//1000 16g 1.95mg/LSB
+//1111 32g 3.91mg/LSB
+//Others 2g 244ug/LSB
+
+//0x2c
+//Duration = (NO_MOT_DUR<3:0> + 1) * 1s, if NO_MOT_DUR<5:4> =b00 
+//Duration = (NO_MOT_DUR<3:0> + 4) * 5s, if NO_MOT_DUR<5:4> =b01 
+//Duration = (NO_MOT_DUR<3:0> + 10) * 10s, if NO_MOT_DUR<5:4> =b1x 
+//ANY_MOT_DUR<1:0>: any motion interrupt will be triggered when slope > ANY_MOT_TH for (ANY_MOT_DUR<1:0> + 1) samples 
+
+//0x2e ANY MOTION MOT_CONF2
+//TH= ANY_MOT_TH<7:0> * 16 * LSB 
+
+#if defined(QMA7981_ANY_MOTION)
+    reg_0x18 |= 0x07;
+    reg_0x1a |= 0x01;
+    reg_0x2c |= 0x00;  //BIT[0-1]   (ANY_MOT_DUR<1:0> + 1) samples 
+    
+    QST_i2c_write(pi2c, 0x18, reg_0x18);
+    QST_i2c_write(pi2c, 0x1a, reg_0x1a);
+    QST_i2c_write(pi2c, 0x2c, reg_0x2c);
+    //QST_i2c_write(pi2c, 0x2e, 0x14);    // 0.488*16*20 = 156mg
+    //QST_i2c_write(pi2c, 0x2e, 0x80);    // 0.488*16*128 = 1g
+    //QST_i2c_write(pi2c, 0x2e, 0xa0);    // 0.488*16*160 = 1.25g
+    //QST_i2c_write(pi2c, 0x2e, 0x60);    // 0.488*16*96 = 750mg
+    //QST_i2c_write(pi2c, 0x2e, 0x40);    // 0.488*16*64 = 500mg
+    //QST_i2c_write(pi2c, 0x2e, 0x20);    // 0.488*16*32 = 250mg
+    QST_i2c_write(pi2c, 0x2e, 0x40);    // 0.488*16*64 = 500mg
+
+#if defined(QMA7981_ABNORMAL_SHAKE_CHECK)
+    reg_0x10 = 0xe0;    // ODR: 65hz 15.48 ms
+    QST_i2c_write(pi2c, 0x10, reg_0x10);
+    qmaX981_set_range(QMAX981_RANGE_8G);
+    QST_i2c_write(pi2c, 0x2e, 0x60);    // 0.977*16*96 = 1500mg
+#endif
+  
+#if defined(QMA7981_SIGNIFICANT_MOTION)
+//SIG_MOT_TPROOF [BIT4-5]<1:0>: 00: T_PROOF=0.25s,  01: T_PROOF=0.5s,  10: T_PROOF=1s,  11: T_PROOF=2s 
+// significant motion interrupt ,  0: select any motion interrupt
+//SIG_MOT_TSKIP[BIT2-3]<1:0>: 00: T_SKIP=1.5s,  01: T_SKIP=3s,  10: T_SKIP=6s,  11: T_SKIP=12s 
+//SIG_MOT_SEL: 1: select
+//QST_i2c_write(pi2c, 0x2f, 0x0c|0x01);
+    QST_i2c_write(pi2c, 0x2f, 0x01);    // bit0   1 significant motion, 0: any motion.
+
+    reg_0x19 |= 0x01;
+    QST_i2c_write(pi2c, 0x19, reg_0x19);
+#endif
+#endif
+#if defined(QMA7981_NO_MOTION)
+    reg_0x18 |= 0xe0;
+    reg_0x1a |= 0x80;
+    reg_0x2c |= 0x00;  //1s   //0x24;
+
+    QST_i2c_write(pi2c, 0x18, reg_0x18);
+    QST_i2c_write(pi2c, 0x1a, reg_0x1a);
+    QST_i2c_write(pi2c, 0x2c, reg_0x2c);
+    QST_i2c_write(pi2c, 0x2d, 0x14);
 #endif
 
 #if defined(QMA7981_HAND_UP_DOWN)
     QMA7981_set_hand_up_down(pi2c, QMA7981_LAYOUT);
     reg_0x16 |= 0x02;
     reg_0x19 |= 0x02;
-
-    QST_i2c_write(pi2c, 0x16, reg_0x16);	// hand up
+    QST_i2c_write(pi2c, 0x16, reg_0x16);  // hand up
     QST_i2c_write(pi2c, 0x19, reg_0x19);
     //reg_0x16 |= 0x04;
     //reg_0x19 |= 0x04;
-    //QST_i2c_write(pi2c, 0x16, reg_0x16);	// hand down
+    //QST_i2c_write(pi2c, 0x16, reg_0x16);  // hand down
     //QST_i2c_write(pi2c, 0x19, reg_0x19);
 #endif
 
-#if defined(QMA7981_ANY_MOTION)
-    uint8_t reg_0x2c=0;
-    reg_0x18 |= 0x07;
-    reg_0x1a |= 0x01;
-    reg_0x2c |= 0x00;	//BIT[0-1]	 (ANY_MOT_DUR<1:0> + 1) samples 
-    
-    QST_i2c_write(pi2c, 0x18, reg_0x18);
+#if defined(QMA7981_DATA_READY)
+    reg_0x1a |= 0x10;
+    QST_i2c_write(pi2c, 0x17, 0x10);
     QST_i2c_write(pi2c, 0x1a, reg_0x1a);
-    QST_i2c_write(pi2c, 0x2c, reg_0x2c);
-    //QST_i2c_write(pi2c, 0x2e, 0x14);		// 0.488*16*20 = 156mg
-    //QST_i2c_write(pi2c, 0x2e, 0x80);		// 0.488*16*128 = 1g
-    //QST_i2c_write(pi2c, 0x2e, 0xa0);		// 0.488*16*160 = 1.25g
-    //QST_i2c_write(pi2c, 0x2e, 0x60);		// 0.488*16*96 = 750mg
-    //QST_i2c_write(pi2c, 0x2e, 0x40);		// 0.488*16*64 = 500mg
-    //QST_i2c_write(pi2c, 0x2e, 0x20);		// 0.488*16*32 = 250mg
-    QST_i2c_write(pi2c, 0x2e, 0x40);	
 #endif
+
+#if defined(QMA7981_INT_LATCH)
+    QST_i2c_write(pi2c, 0x21, 0x1f);  // default 0x1c, step latch mode
+#endif
+// int default level set
+    //QST_i2c_write(pi2c, 0x20, 0x00);
+// int default level set
     QMA7981_delay_ms(50);
 
     QST_i2c_deinit(pi2c);
@@ -633,6 +719,16 @@ void QMA7981_wake_up(void)
     void* pi2c = QST_i2c_init();
     QST_i2c_write(pi2c, 0x11, s_QMA7981_ctx.pm_value);
     QST_i2c_deinit(pi2c);
+}
+
+void QMA7981_disable(void)
+{
+    void* pi2c = QST_i2c_init();
+    QST_i2c_write(pi2c, 0x11, 0x40);
+    QST_i2c_deinit(pi2c);
+
+    QMA7981_acc_report_stop();
+    QMA7981_step_report_stop();
 }
 
 int QMA7981_init(QMA7981_evt_hdl_t evt_hdl)
