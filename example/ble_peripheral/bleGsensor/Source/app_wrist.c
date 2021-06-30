@@ -57,7 +57,7 @@
 #include "app_wrist.h"
 #include "QMA7981.h"
 //#include "battery.h"
-#include "kscan.h"
+//#include "kscan.h"
 #include "log.h"
 
 /*********************************************************************
@@ -98,8 +98,6 @@
 
 // Supervision timeout value (units of 10ms) if automatic parameter update request is enabled
 #define DEFAULT_DESIRED_CONN_TIMEOUT          1000
-
-
 
 // Some values used to simulate measurements
 #define BPM_DEFAULT                           73
@@ -339,7 +337,6 @@ void appWristInit( uint8 task_id )
  */
 uint16 appWristProcEvt( uint8 task_id, uint16 events )
 {
-  
   VOID task_id; // OSAL required parameter that isn't used in this function
 
   if ( events & SYS_EVENT_MSG )
@@ -367,6 +364,12 @@ uint16 appWristProcEvt( uint8 task_id, uint16 events )
     GAPBondMgr_Register( (gapBondCBs_t *) &WristBondCB );
     
     return ( events ^ START_DEVICE_EVT );
+  }
+
+  if( events & TIMER_DT_EVT)
+  {
+    app_datetime_sync_handler();
+    return ( events ^ TIMER_DT_EVT );
   }
 
   if( events & ACC_DATA_REPORT_EVT)
@@ -469,7 +472,7 @@ static void WristGapStateCB( gaprole_States_t newState )
       GAP_SetParamValue( TGAP_GEN_DISC_ADV_INT_MAX, DEFAULT_SLOW_ADV_INTERVAL );
       GAP_SetParamValue( TGAP_GEN_DISC_ADV_MIN, DEFAULT_SLOW_ADV_DURATION );
       GAPRole_SetParameter( GAPROLE_ADVERT_ENABLED, sizeof( uint8 ), &advState );   
-    }  
+    }
   }
   // if started
   else if (newState == GAPROLE_STARTED)
@@ -477,12 +480,12 @@ static void WristGapStateCB( gaprole_States_t newState )
     // Set the system ID from the bd addr
     uint8 systemId[DEVINFO_SYSTEM_ID_LEN];
     GAPRole_GetParameter(GAPROLE_BD_ADDR, systemId);
-    
+
     // shift three bytes up
     systemId[7] = systemId[5];
     systemId[6] = systemId[4];
     systemId[5] = systemId[3];
-    
+
     // set middle bytes to zero
     systemId[4] = 0;
     systemId[3] = 0;
@@ -506,7 +509,7 @@ static void wristCB(uint8 event, uint8 param_size, uint8* param)
 {
   switch(event){
 
-		case WRIST_NOTI_ENABLED:
+  case WRIST_NOTI_ENABLED:
   {
     // if connected start periodic measurement
     if (gapProfileState == GAPROLE_CONNECTED)
