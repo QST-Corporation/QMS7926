@@ -57,7 +57,8 @@
 #include "app_wrist.h"
 #include "QMA7981.h"
 //#include "battery.h"
-//#include "kscan.h"
+#include "stdio.h"
+#include "string.h"
 #include "log.h"
 
 /*********************************************************************
@@ -131,19 +132,24 @@ static gaprole_States_t gapProfileState = GAPROLE_INIT;
 // GAP Profile - Name attribute for SCAN RSP data
 static uint8 scanData[] =
 {
-  0x0C,   // length of this data
+  0x11,   // length of this data
   GAP_ADTYPE_LOCAL_NAME_COMPLETE,
   'Q',
   'S',
   'T',
   '-',
-  'G',
-  's',
-  'e',
-  'n',
-  's',
-  'o',
-  'r',
+  'A',
+  'c',
+  'c',
+  '-',
+  'F',
+  'F',
+  ':',
+  'F',
+  'F',
+  ':',
+  'F',
+  'F'
 };
 
 
@@ -161,7 +167,7 @@ static uint8 advertData[] =
 };
 
 // Device name attribute value
-static uint8 attDeviceName[GAP_DEVICE_NAME_LEN] = "QST-Gsensor ";
+static uint8 attDeviceName[GAP_DEVICE_NAME_LEN] = "QST-Acc";
 
 // GAP connection handle
 static uint16 gapConnHandle;
@@ -278,7 +284,7 @@ void appWristInit( uint8 task_id )
 
     GAPRole_SetParameter(GAPROLE_ADV_DIRECT_ADDR, sizeof(peerPublicAddr), peerPublicAddr);
     // set adv channel map
-    GAPRole_SetParameter(GAPROLE_ADV_CHANNEL_MAP, sizeof(uint8), &advChnMap);        
+    GAPRole_SetParameter(GAPROLE_ADV_CHANNEL_MAP, sizeof(uint8), &advChnMap);
     
     // Set the GAP Role Parameters
     GAPRole_SetParameter( GAPROLE_ADVERT_ENABLED, sizeof( uint8 ), &initial_advertising_enable );
@@ -408,6 +414,40 @@ static void appWristProcOSALMsg( osal_event_hdr_t *pMsg )
 {
 }
 
+void update_system_id(void)
+{
+  // Set the system ID from the bd addr
+  uint8 systemId[DEVINFO_SYSTEM_ID_LEN];
+  GAPRole_GetParameter(GAPROLE_BD_ADDR, systemId);
+
+  // shift three bytes up
+  systemId[7] = systemId[5];
+  systemId[6] = systemId[4];
+  systemId[5] = systemId[3];
+
+  // set middle bytes to zero
+  systemId[4] = 0;
+  systemId[3] = 0;
+
+  DevInfo_SetParameter(DEVINFO_SYSTEM_ID, DEVINFO_SYSTEM_ID_LEN, systemId);
+}
+
+void devName_append_addr(void)
+{
+  uint8 ownAddress[B_ADDR_LEN];
+  uint8_t advname_len = strlen((char*)attDeviceName);
+
+  GAPRole_GetParameter(GAPROLE_BD_ADDR, ownAddress);
+
+  sprintf((char*)(attDeviceName+advname_len), (char*)"-%02X:%02X:%02X",
+                  ownAddress[2],ownAddress[1],ownAddress[0]);
+  advname_len = strlen((char*)attDeviceName);
+  //LOG("DevName: %s\n", attDeviceName);
+  GGS_SetParameter(GGS_DEVICE_NAME_ATT, advname_len, attDeviceName );
+
+  osal_memcpy(scanData+2, attDeviceName, advname_len);
+  GAPRole_SetParameter( GAPROLE_SCAN_RSP_DATA, sizeof (scanData), scanData);
+}
 
 /*********************************************************************
  * @fn      WristGapStateCB
@@ -452,7 +492,7 @@ static void WristGapStateCB( gaprole_States_t newState )
     }
 
     // Enable advertising
-    GAPRole_SetParameter( GAPROLE_ADVERT_ENABLED, sizeof( uint8 ), &advState );    
+    GAPRole_SetParameter( GAPROLE_ADVERT_ENABLED, sizeof( uint8 ), &advState );
   }    
   // if advertising stopped
   else if ( gapProfileState == GAPROLE_ADVERTISING && 
@@ -471,28 +511,16 @@ static void WristGapStateCB( gaprole_States_t newState )
       GAP_SetParamValue( TGAP_GEN_DISC_ADV_INT_MIN, DEFAULT_SLOW_ADV_INTERVAL );
       GAP_SetParamValue( TGAP_GEN_DISC_ADV_INT_MAX, DEFAULT_SLOW_ADV_INTERVAL );
       GAP_SetParamValue( TGAP_GEN_DISC_ADV_MIN, DEFAULT_SLOW_ADV_DURATION );
-      GAPRole_SetParameter( GAPROLE_ADVERT_ENABLED, sizeof( uint8 ), &advState );   
+      GAPRole_SetParameter( GAPROLE_ADVERT_ENABLED, sizeof( uint8 ), &advState );
     }
   }
   // if started
   else if (newState == GAPROLE_STARTED)
   {
-    // Set the system ID from the bd addr
-    uint8 systemId[DEVINFO_SYSTEM_ID_LEN];
-    GAPRole_GetParameter(GAPROLE_BD_ADDR, systemId);
-
-    // shift three bytes up
-    systemId[7] = systemId[5];
-    systemId[6] = systemId[4];
-    systemId[5] = systemId[3];
-
-    // set middle bytes to zero
-    systemId[4] = 0;
-    systemId[3] = 0;
-    
-    DevInfo_SetParameter(DEVINFO_SYSTEM_ID, DEVINFO_SYSTEM_ID_LEN, systemId);
+    update_system_id();
+    devName_append_addr();
   }
-  
+
   gapProfileState = newState;
 }
 
