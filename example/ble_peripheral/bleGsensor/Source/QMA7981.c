@@ -58,6 +58,7 @@ typedef struct _QMA7981_ctx_t{
 // store come from pedometer parm config
 static QMA7981_ctx_t s_QMA7981_ctx;
 uint16_t g_qma7981_lsb_1g;
+float  g_qma7981_cust_lsb_mg;
 
 /*  
 qma7981 odr setting
@@ -202,16 +203,26 @@ static void QMA7981_int_handler(GPIO_Pin_e pin,IO_Wakeup_Pol_e type)
 
 static uint8_t QMA7981_set_range(void* pi2c, uint8_t range)
 {
-    if(range == QMA7981_RANGE_4G)
+    if(range == QMA7981_RANGE_4G) {
       g_qma7981_lsb_1g = 2048;
-    else if(range == QMA7981_RANGE_8G)
+      g_qma7981_cust_lsb_mg = 7.8;
+    }
+    else if(range == QMA7981_RANGE_8G) {
       g_qma7981_lsb_1g = 1024;
-    else if(range == QMA7981_RANGE_16G)
+      g_qma7981_cust_lsb_mg = 15.6;
+    }
+    else if(range == QMA7981_RANGE_16G) {
       g_qma7981_lsb_1g = 512;
-    else if(range == QMA7981_RANGE_32G)
+      g_qma7981_cust_lsb_mg = 31.2;
+    }
+    else if(range == QMA7981_RANGE_32G) {
       g_qma7981_lsb_1g = 256;
-    else
+      g_qma7981_cust_lsb_mg = 62.5;
+    }
+    else {
       g_qma7981_lsb_1g = 4096;
+      g_qma7981_cust_lsb_mg = 3.9;
+    }
 
     return QST_i2c_write(pi2c, QMA7981_REG_RANGE, range);
 }
@@ -544,9 +555,16 @@ static int QMA7981_config(void)
 #if defined(QMA7981_INT_LATCH)
     QST_i2c_write(pi2c, 0x21, 0x1f);  // default 0x1c, step latch mode
 #endif
-// int default level set
+    // int default level set
     //QST_i2c_write(pi2c, 0x20, 0x00);
-// int default level set
+    //-------------------------------------------------------------
+    // X offset 2102, 4G range, CUST_X = 2102/9.807/7.8 = 27
+    int16_t Xoffset = 2102;
+    uint8_t XcustPostv = Xoffset*1000/GRAVITY_EARTH_1000/g_qma7981_cust_lsb_mg;
+    LOG("Xoffset:%d, Xcust:%d\n", Xoffset, XcustPostv);
+    uint8_t XcustNegav = ~XcustPostv + 1;
+    QST_i2c_write(pi2c, 0x27, XcustNegav);
+    //-------------------------------------------------------------
     QMA7981_delay_ms(50);
 
     QST_i2c_deinit(pi2c);
