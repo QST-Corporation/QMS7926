@@ -57,6 +57,25 @@
 
 static uint8 ap_timer_TaskID; 
 
+
+void timer_int_process(uint8_t evt)
+{
+  switch(evt)
+  {
+    case APTM_EVT_TIMER_1:LOG("t1 ");break;
+    case APTM_EVT_TIMER_2:LOG("t2 ");break;
+    case APTM_EVT_TIMER_3:LOG("t3 ");break;
+    case APTM_EVT_TIMER_4:LOG("t4 ");break;
+
+    //To test below two cases, we should enable sleep first
+    //(by changing macro "PWR_MODE_NO_SLEEP" to "PWR_MODE_SLEEP")
+    case APTM_EVT_WAKEUP: LOG("wakeup ");break;
+    case APTM_EVT_SLEEP:  LOG("sleep ");break;
+
+    default:LOG("err ");break;
+  }
+}
+
 /*********************************************************************
  * @fn      AP_TIMER_Demo_Init
  *
@@ -66,93 +85,92 @@ static uint8 ap_timer_TaskID;
  *
  * @return  
  */
- void AP_TIMER_Demo_Init( uint8 task_id ){
-	ap_timer_TaskID = task_id;
-	 
-	LOG("when test this case,you can uncomment comment which in timer int function\n");
+void AP_TIMER_Demo_Init( uint8 task_id ){
+  ap_timer_TaskID = task_id;
+
+  LOG("when test this case,you can uncomment comment which in timer int function\n");
   osal_start_reload_timer( ap_timer_TaskID, TIMER_1000_MS_EVT, 1000);
 }
  
 void ap_timer_test(uint8_t testCase)
 {
-	LOG("\ntest_case:%d",testCase);
-	
-	switch(testCase)
-	{
-		case 0:
-			LOG("\ninit timer0~timer4\n");
-			ap_timer_set(0,1000000);
-			ap_timer_set(1,2000000);
-			ap_timer_set(2,3000000);
-			ap_timer_set(3,4000000);
-            ap_timer_init(NULL);
-			break;
-		
-		case 1:
-			LOG("\nmask timer0~timer4 init\n");
-			ap_timer_int_mask(0,1);
-			ap_timer_int_mask(1,1);
-			ap_timer_int_mask(2,1);
-			ap_timer_int_mask(3,1);
-			break;
-		
-		case 2:
-			LOG("\nunmask timer0~timer4 init\n");
-			ap_timer_int_mask(0,0);
-			ap_timer_int_mask(1,0);
-			ap_timer_int_mask(2,0);
-			ap_timer_int_mask(3,0);
-			break;
-		
-		
-		case 5:
-			LOG("\nclear timer0~timer4 int\n");
-			ap_timer_clear(0);
-			ap_timer_clear(1);
-			ap_timer_clear(2);
-			ap_timer_clear(3);
-			break;
-		
-		case 6:
-			LOG("\ninit timer0~timer4\n");
-			ap_timer_set(0,1000000);
-			ap_timer_set(1,2000000);
-			ap_timer_set(2,3000000);
-			ap_timer_set(3,4000000);
-			ap_timer_init(NULL);
-			break;
-				
-		case 7:
-			LOG("\ndeinit timer0~timer4\n");
-			ap_timer_deinit();
-			break;
-						
-		default:
-			break;
-	}
+  LOG("\ntest_case:%d\n",testCase);
+
+  switch(testCase)
+  {
+    case 0:
+      LOG("init timer0~timer4\n");
+      ap_timer_init(timer_int_process);
+      ap_timer_set(0,1000000); //us, 1s
+      ap_timer_set(1,2000000); //us, 2s
+      ap_timer_set(2,3000000);
+      ap_timer_set(3,4000000);
+      break;
+
+    case 1:
+      LOG("mask timer0~timer4 int\n");
+      ap_timer_int_mask(0,1);
+      ap_timer_int_mask(1,1);
+      ap_timer_int_mask(2,1);
+      ap_timer_int_mask(3,1);
+      break;
+
+    case 2:
+      LOG("unmask timer0~timer4 int\n");
+      ap_timer_int_mask(0,0);
+      ap_timer_int_mask(1,0);
+      ap_timer_int_mask(2,0);
+      ap_timer_int_mask(3,0);
+      break;
+
+    case 5:
+      LOG("clear timer0~timer4 int\n");
+      ap_timer_clear(0);
+      ap_timer_clear(1);
+      ap_timer_clear(2);
+      ap_timer_clear(3);
+      break;
+
+    case 6:
+      LOG("init timer0~timer4\n");
+      ap_timer_init(timer_int_process);
+      ap_timer_set(0,1000000);
+      ap_timer_set(1,2000000);
+      ap_timer_set(2,3000000);
+      ap_timer_set(3,4000000);
+      break;
+
+    case 7:
+      LOG("deinit timer0~timer4\n");
+      ap_timer_deinit();
+      break;
+
+    default:
+      break;
+  }
 }
 
 uint16 AP_TIMER_Demo_ProcessEvent( uint8 task_id, uint16 events )
 {
-	static uint8_t s_testCase = 0;
-	static uint8_t min_count = 12;
-	
-	if (events & TIMER_1000_MS_EVT )
-	{
-		if(min_count == 12)
-		{
-			ap_timer_test(s_testCase);
-			min_count = 0;
-			if(s_testCase < 7)
-				s_testCase++;
-			else
-				s_testCase = 0;
-		}
-		min_count++;
-		
-		return (events ^ TIMER_1000_MS_EVT);
-	}  
+  static uint8_t s_testCase = 0;
+  static uint8_t min_count = 12;
 
-	return 0;
+  if (events & TIMER_1000_MS_EVT )
+  {
+    if(min_count == 12)
+    {
+      ap_timer_test(s_testCase);
+      min_count = 0;
+      if(s_testCase < 7)
+        s_testCase++;
+      else
+        s_testCase = 0;
+    }
+    min_count++;
+    
+    return (events ^ TIMER_1000_MS_EVT);
+  }  
+
+  return 0;
 }
 
