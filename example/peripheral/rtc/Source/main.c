@@ -66,20 +66,19 @@ static void rf_wakeup_handler(void){
 
 void hal_init(void)
 {
-  hal_system_init(g_system_clk);//(SYS_CLK_DLL_32M);//SYS_CLK_XTAL_16M);   //system init
-    
-	hal_pwrmgr_RAM_retention(RET_SRAM0|RET_SRAM1|RET_SRAM2|RET_SRAM3|RET_SRAM4);
-  
-  hal_rtc_clock_config(CLK_32K_XTAL);//CLK_32K_RCOSC);
+    hal_system_init(g_system_clk);
 
-  LOG_INIT();
-    
-  hal_gpio_init();
-	
-  hal_adc_init();
-      
-    
-  LOG("all driver init OK!\n");
+    hal_pwrmgr_RAM_retention(RET_SRAM0|RET_SRAM1|RET_SRAM2|RET_SRAM3|RET_SRAM4);
+
+    hal_rtc_clock_config(CLK_32K_XTAL);//CLK_32K_RCOSC);
+
+    LOG_INIT();
+
+    hal_gpio_init();
+
+    hal_adc_init();
+
+    LOG("all driver init OK!\n");
 }
 
 static void hal_rfphy_init(void)
@@ -90,9 +89,9 @@ static void hal_rfphy_init(void)
     g_rfPhyPktFmt   = PKT_FMT_BLE1M;
     //============config RF Frequency Offset
     g_rfPhyFreqOffSet   =RF_PHY_FREQ_FOFF_00KHZ;
-    
+
     hal_rom_code_ini();
-    
+
     //Quick Boot setting and 
      *(volatile uint32_t *) 0x4000f01c = 0x0000004;       //  3'b1xx: 62.5us.  control bits for main digital part reset wait time after power up charge pump. 
 
@@ -108,30 +107,28 @@ static void hal_rfphy_init(void)
 
     DCDC_CONFIG_SETTING(0x0d);
 
-
     NVIC_SetPriority((IRQn_Type)BB_IRQ, IRQ_PRIO_REALTIME);
     NVIC_SetPriority((IRQn_Type)CP_TIMER_IRQ, IRQ_PRIO_HIGH);
 
     hal_pwrmgr_register(MOD_USR0, NULL, rf_wakeup_handler);
 
 }
-
 int  main(void)  
 {     
     // init global configuration of SOC
     int rrn = __return_address();
 
-    g_system_clk = SYS_CLK_XTAL_16M;
-    
-	init_config();
+    g_system_clk = SYS_CLK_DLL_48M;
+
+    init_config();
     hal_pwrmgr_init();
-    
-    hal_rfphy_init();  
+
+    hal_rfphy_init();
 
     hal_init();
     LOG("%x\n", rrn);
-	
-    app_main();	
+
+    app_main();
 }
 
 

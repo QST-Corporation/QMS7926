@@ -146,7 +146,7 @@ static uint8 advertData[] =
 };
 
 // Device name attribute value
-static uint8 attDeviceName[GAP_DEVICE_NAME_LEN] = "PPlusOTA";
+static uint8 attDeviceName[GAP_DEVICE_NAME_LEN] = "QST-OTA";
 
 // GAP connection handle
 static uint16 gapConnHandle;

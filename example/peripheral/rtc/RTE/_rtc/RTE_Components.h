@@ -3,8 +3,8 @@
  * Auto generated Run-Time-Environment Configuration File
  *      *** Do not modify ! ***
  *
- * Project: 'ap_timer' 
- * Target:  'ap_timer' 
+ * Project: 'rtc' 
+ * Target:  'rtc' 
  */
 
 #ifndef RTE_COMPONENTS_H

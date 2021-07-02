@@ -75,7 +75,7 @@ void hal_init(void)
     
 	hal_gpio_init();
 	hal_adc_init();
-	hal_spi_init();
+	//hal_spi_init();
 	
   LOG("all driver init OK!\n");
 }
