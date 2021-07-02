@@ -10,7 +10,7 @@
       <TargetName>wrist</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
-      <pCCUsed>5060750::V5.06 update 6 (build 750)::ARMCC</pCCUsed>
+      <pCCUsed>5060960::V5.06 update 7 (build 960)::.\ARMCC</pCCUsed>
       <uAC6>0</uAC6>
       <TargetOption>
         <TargetCommonOption>
@@ -185,6 +185,7 @@
             <uocXRam>0</uocXRam>
             <RvdsVP>0</RvdsVP>
             <RvdsMve>0</RvdsMve>
+            <RvdsCdeCp>0</RvdsCdeCp>
             <hadIRAM2>0</hadIRAM2>
             <hadIROM2>0</hadIROM2>
             <StupSel>8</StupSel>
@@ -336,7 +337,7 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls>-DADV_NCONN_CFG=0x01   -DADV_CONN_CFG=0x02   -DSCAN_CFG=0x04    -DINIT_CFG=0x08   -DBROADCASTER_CFG=0x01 -DOBSERVER_CFG=0x02   -DPERIPHERAL_CFG=0x04   -DCENTRAL_CFG=0x08   -DHOST_CONFIG=0x4  </MiscControls>
-              <Define>CFG_CP CFG_QFN32 CFG_SLEEP_MODE=PWR_MODE_NO_SLEEP DEBUG_INFO=1 DISP_OLED=0 DISP_TFT=2 CFG_DISP=DISP_OLED USE_SYS_TICK=FALSE</Define>
+              <Define>CFG_CP CFG_QFN32 CFG_SLEEP_MODE=PWR_MODE_NO_SLEEP DEBUG_INFO=0 DISP_OLED=0 DISP_TFT=2 CFG_DISP=DISP_OLED USE_SYS_TICK=FALSE</Define>
               <Undefine></Undefine>
               <IncludePath>.\Source;..\..\..\components\inc;..\..\..\components\common;..\..\..\components\osal\include;..\..\..\components\ble\include;..\..\..\components\ble\hci;..\..\..\components\ble\host;..\..\..\components\ble\controller\include;..\..\..\components\profiles\DevInfo;..\..\..\components\profiles\GATT;..\..\..\components\profiles\SimpleProfile;..\..\..\components\profiles\Roles;..\..\..\components\profiles\hrs;..\..\..\components\profiles\ota_app;..\..\..\components\driver\common;..\..\..\components\driver\log;..\..\..\components\driver\gpio;..\..\..\components\driver\uart;..\..\..\components\driver\i2c;..\..\..\components\driver\adc;..\..\..\components\driver\clock;..\..\..\components\driver\pwm;..\..\..\components\driver\pwrmgr;..\..\..\components\driver\kscan;..\..\..\components\driver\spi;..\..\..\components\driver\flash;..\..\..\components\driver\watchdog;..\..\..\components\driver\timer;..\..\..\components\libraries\datetime;..\..\..\lib;.\Source;.\Source\ui;.\Source\ble;.\Source\epticore;.\Source\TYHX</IncludePath>
             </VariousControls>
@@ -351,7 +352,7 @@
             <NoWarn>0</NoWarn>
             <uSurpInc>0</uSurpInc>
             <useXO>0</useXO>
-            <uClangAs>0</uClangAs>
+            <ClangAsOpt>4</ClangAsOpt>
             <VariousControls>
               <MiscControls></MiscControls>
               <Define></Define>
@@ -468,19 +469,9 @@
               <FilePath>.\Source\ble\wristservice.c</FilePath>
             </File>
             <File>
-              <FileName>touch_key.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Source\touch_key.c</FilePath>
-            </File>
-            <File>
               <FileName>battery.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Source\battery.c</FilePath>
-            </File>
-            <File>
-              <FileName>led_light.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Source\led_light.c</FilePath>
             </File>
             <File>
               <FileName>QMA7981.c</FileName>
@@ -488,14 +479,14 @@
               <FilePath>.\Source\QMA7981.c</FilePath>
             </File>
             <File>
-              <FileName>m0_keil_20190320_v22_07d_hglbp.lib</FileName>
-              <FileType>4</FileType>
-              <FilePath>.\Source\TYHX\m0_keil_20190320_v22_07d_hglbp.lib</FilePath>
+              <FileName>host_comm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Source\host_comm.c</FilePath>
             </File>
             <File>
-              <FileName>hrs3300.c</FileName>
+              <FileName>QMA7981_algo.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Source\TYHX\hrs3300.c</FilePath>
+              <FilePath>.\Source\QMA7981_algo.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -575,56 +566,6 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>ui</GroupName>
-          <Files>
-            <File>
-              <FileName>lcd_allvision.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Source\ui\lcd_allvision.c</FilePath>
-            </File>
-            <File>
-              <FileName>res_tab_128x32.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Source\ui\res_tab_128x32.c</FilePath>
-            </File>
-            <File>
-              <FileName>ui_128x32_normal.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Source\ui\ui_128x32_normal.c</FilePath>
-            </File>
-            <File>
-              <FileName>ui_display.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Source\ui\ui_display.c</FilePath>
-            </File>
-            <File>
-              <FileName>ui_page.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Source\ui\ui_page.c</FilePath>
-            </File>
-            <File>
-              <FileName>ui_task.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Source\ui\ui_task.c</FilePath>
-            </File>
-            <File>
-              <FileName>lcd_TFT.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Source\ui\lcd_TFT.c</FilePath>
-            </File>
-            <File>
-              <FileName>ui_160x80_TFT.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Source\ui\ui_160x80_TFT.c</FilePath>
-            </File>
-            <File>
-              <FileName>ui_dispTFT.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Source\ui\ui_dispTFT.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
           <GroupName>library</GroupName>
           <Files>
             <File>
@@ -641,6 +582,46 @@
               <FileName>phy_font.lib</FileName>
               <FileType>4</FileType>
               <FilePath>..\..\..\lib\phy_font.lib</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>hrs</GroupName>
+          <Files>
+            <File>
+              <FileName>hx3690l.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Source\hrs\hx3690l.c</FilePath>
+            </File>
+            <File>
+              <FileName>hx3690l_hrs_agc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Source\hrs\hx3690l_hrs_agc.c</FilePath>
+            </File>
+            <File>
+              <FileName>hx3690l_spo2_agc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Source\hrs\hx3690l_spo2_agc.c</FilePath>
+            </File>
+            <File>
+              <FileName>hx3690q_factory_test.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Source\hrs\hx3690q_factory_test.c</FilePath>
+            </File>
+            <File>
+              <FileName>m0_keil_3690Q_20201215_V03_02d.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>.\Source\hrs\m0_keil_3690Q_20201215_V03_02d.lib</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>gps</GroupName>
+          <Files>
+            <File>
+              <FileName>gps.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Source\gps\gps.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -708,7 +689,7 @@
                 <NoWarn>2</NoWarn>
                 <uSurpInc>2</uSurpInc>
                 <useXO>2</useXO>
-                <uClangAs>2</uClangAs>
+                <ClangAsOpt>0</ClangAsOpt>
                 <VariousControls>
                   <MiscControls></MiscControls>
                   <Define></Define>

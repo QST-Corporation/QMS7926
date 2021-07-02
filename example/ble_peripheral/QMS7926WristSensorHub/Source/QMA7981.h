@@ -33,6 +33,14 @@
 #ifndef _QMA7981_H
 #define _QMA7981_H
 
+#define     QMA7981_STEPCOUNTER
+#define     QMA7981_HAND_UP_DOWN
+#define     SLEEP_AlGORITHM
+//#define     QMA7981_ANY_MOTION
+
+#define     QMA7981_SLAVE_ADDR              0x12
+#define     QMA7981_LAYOUT                  0
+#define     GRAVITY_EARTH_1000              9.807f	// about (9.80665f)*1000   mm/s2
 
 #define     QMA7981_RAISE_CFG5              0x3F
 #define     QMA7981_RAISE_CFG4              0x3E
@@ -69,7 +77,7 @@
 #define     QMA7981_STEP_CFG0               0x12
 #define     QMA7981_PM                      0x11
 #define     QMA7981_BW                      0x10
-#define     QMA7981_FSR                     0x0F
+#define     QMA7981_REG_RANGE               0x0F
 #define     QMA7981_STEPCNT_HIGHBYTE        0x0E
 #define     QMA7981_INT_ST4                 0x0D
 #define     QMA7981_INT_ST3                 0x0C
@@ -204,44 +212,99 @@
 #define     ANY_MOT_FIRST_Z                 (0x01 << 2)
 #define     ANY_MOT_FIRST_Y                 (0x01 << 1)
 #define     ANY_MOT_FIRST_X                 (0x01 << 0)
-#define     STEP_CNT_HIGH                   0xFF
-#define     STEP_CNT_MIDDLE                 0xFF
-#define     STEP_CNT_LOW                    0xFF
+#define     STEP_W_TIME_L                   300
+#define     STEP_W_TIME_H                   250
 #define     ACC_DATA_Z_HIGH                 0xFF
 #define     ACC_DATA_Z_LOW                  0xFC
 #define     ACC_DATA_Y_HIGH                 0xFF
 #define     ACC_DATA_Y_LOW                  0xFC
 #define     ACC_DATA_X_HIGH                 0xFF
 #define     ACC_DATA_X_LOW                  0xFC
+#define     QMA7981_DELAY                   0xFF
+
+/* Accelerometer Sensor Full Scale */
+#define QMA7981_RANGE_2G      0x01
+#define QMA7981_RANGE_4G      0x02
+#define QMA7981_RANGE_8G      0x04
+#define QMA7981_RANGE_16G     0x08
+#define QMA7981_RANGE_32G     0x0f
+
+#ifdef SLEEP_AlGORITHM
+#define QST_SLEEP_TIMER_RATIO		2			// timer 1 second
+#define QST_SLEEP_TIMER_CYC			60			// timer cycle one minute
+#define QST_SLEEP_FIFO_LEN                  32
+#define QST_SLEEP_FIFO_SET_INTERVAL         62	// 2s to sample 32 group data
+#define QST_SLEEP_LIGHTSLEEP_CONTINUE_NUM			3	// 6  ���ѵ�ǳ˯3���� 6~8
+#define QST_SLEEP_DEEPSLEEP_CONTINUE_NUM			10	// 20  ǳ˯����˯��ʱ��20~30
+
+#define QST_SLEEP_RECORD_LEN						1000
+#define QST_SLEEP_RECORD_COUNT_MIN					8
+
+#define QST_SLEEP_MONTION_THRESHOLD					9.0f
+#define QST_SLEEP_BIGMONTION_THRESHOLD				200.0f
+//small motion
+#define QST_SLEEP_MOTION_LIGHT_THRESHOLD			5.0
+#define QST_SLEEP_MOTION_AWAKE_THRESHOLD			17.0	//15.0 
+//small motion
+//big motion
+#define QST_SLEEP_BIGMOTION_LIGHT_THRESHOLD			2.0 
+#define QST_SLEEP_BIGMOTION_AWAKE_THRESHOLD			8.0 
+// big motion  threshol
+#define  STEPCOUNTER_THRESHOLD_REG_ENTRY_SLEEP      Step_SENSITIVITY //�Ʋ���������  0x13�Ĵ�����ֵ
+#define  STEPCOUNTER_THRESHOLD_REG_QUIT_SLEEP       Step_SENSITIVITY //�Ʋ���������  0x13�Ĵ�����ֵ
+typedef enum
+{
+	QST_SLEEP_NONE,
+	QST_SLEEP_AWAKE = 0x01,
+	QST_SLEEP_LIGHT = 0x02,
+	QST_SLEEP_DEEP = 0x03,
+	QST_SLEEP_UNKNOW = 0xff,
+
+	QST_SLEEP_TOTAL
+}qst_sleep_status;
+
+#endif
 
 
 enum{
-	wufs_event = 0x01,	//
-	stap_event = 0x02,	//single tap
-	dtap_event = 0x04,	//double tap
-	tps_event  = 0x08,
-	wmi_event  = 0x10,	//acceleration data
-	tilt_event  = 0x20	//tilt event
+	handUp_event   = 0x01,	//hand raise
+	handDown_event = 0x02,	//hand down
+	stap_event     = 0x04,	//single tap
+	dtap_event     = 0x08,  //double tap
+	wmi_event      = 0x10,	//acceleration data
+	acc_event      = 0x20,	//tilt event
+  step_event     = 0x40   //step counter
 };
 
-
-
 typedef struct _QMA7981_ev_t{
-	uint8_t	ev;
-	uint8_t	flg;
-	uint8_t size;
-	void* 	data;
+  uint8_t ev;
+  uint8_t flg;
+  uint8_t size;
+  void* data;
 }QMA7981_ev_t;
 
 typedef void (*QMA7981_evt_hdl_t)	(QMA7981_ev_t* pev);
 
-
-uint16_t QMA7981_fetch_acc_data(void);
-uint8_t drv_QMA7981_event_handle(void);
-int QMA7981_enable_tilt(bool en);
-int QMA7981_enable(void);
-int QMA7981_disable(void);
+uint8_t QMA7981_read_acc(float *accData);
+void QMA7981_acc_report_start(uint32_t report_intval_ms);
+void QMA7981_acc_report_stop(void);
+uint8_t QMA7981_report_acc(void);
+void QMA7981_report_handup(void);
+void QMA7981_deep_sleep(void);
+void QMA7981_wake_up(void);
 int QMA7981_init(QMA7981_evt_hdl_t evt_hdl);
-
+#if defined(QMA7981_STEPCOUNTER)
+void QMA7981_clear_step(void);
+uint32_t QMA7981_read_stepcounter(void);
+void QMA7981_step_report_start(uint32_t report_intval_ms);
+void QMA7981_step_report_stop(void);
+uint8_t QMA7981_report_stepcounter(void);
+#endif
+#ifdef SLEEP_AlGORITHM
+void qma7981_read_fifo(void);
+uint8_t qst_sleep_set(char enable);
+void qst_sleep_data_process(void);
+qst_sleep_status qst_sleep_get_status(void);
+#endif
 
 #endif   /* _QMA7981_H */

@@ -121,26 +121,21 @@ enum{
   WRIST_CMD_HR_GET_STATUS		= 0x20,
   WRIST_CMD_HR_START			  = 0x21,
   WRIST_CMD_HR_STOP			    = 0x22,
-  WRIST_CMD_SPO2_START      = 0x23,
-  WRIST_CMD_SPO2_STOP       = 0x24,
-  WRIST_CMD_ACC_RAW_NOTIF_START = 0x30,
-  WRIST_CMD_ACC_RAW_NOTIF_STOP  = 0x31,
-  WRIST_CMD_ACC_STEP_NOTIF_START = 0x32,
-  WRIST_CMD_ACC_STEP_NOTIF_STOP  = 0x33,
+  WRIST_CMD_ACC_NOTIF_START = 0x23,
+  WRIST_CMD_ACC_NOTIF_STOP  = 0x24,
 
-  WRIST_CMD_GPS_TX          = 0x36,
-  WRIST_CMD_GPS_RX          = 0x37,
-  WRIST_CMD_MSG_NOTIF       = 0x38,
-
-  //WRIST_NOTIFY_FIT			= 0x80,
-  WRIST_NOTIFY_HR				  = 0x81,
-  WRIST_NOTIFY_SPO2       = 0x82,
-  //WRIST_NOTIFY_UV				= 0x83,
-  //WRIST_NOTIFY_ENV			= 0x84,
-  WRIST_NOTIFY_HR_RAW			= 0x85,
+	WRIST_CMD_LIGHT_CTRL			= 0x30,
+	
+	WRIST_CMD_MSG_NOTIF				= 0x38,
+	
+	//WRIST_NOTIFY_FIT			= 0x80,
+	WRIST_NOTIFY_HR				  = 0x81,
+	//WRIST_NOTIFY_ATH			= 0x82,
+	//WRIST_NOTIFY_UV				= 0x83,
+	//WRIST_NOTIFY_ENV			= 0x84,
+	WRIST_NOTIFY_HR_RAW			= 0x85,
   WRIST_NOTIFY_ACC        = 0x86,
-  WRIST_NOTIFY_STEP       = 0x87,
-  WRIST_NOTIFY_KSCAN      = 0x88,
+  WRIST_NOTIFY_KSCAN      = 0x87,
 
 	WRIST_RO_DATA				= 0xa0,
 
@@ -192,13 +187,6 @@ typedef struct _wristRspAcc_t{
   uint8_t		acc[3*4];
 	uint8_t		chksum;
 }wristRspAcc_t;
-
-typedef struct _wristRspStep_t{
-	uint8_t		cmd;
-	uint8_t		csn;
-  uint32_t  step;
-	uint8_t		chksum;
-}wristRspStep_t;
 
 typedef struct _wristRspKScan_t{
 	uint8_t		cmd;
@@ -287,8 +275,7 @@ typedef void (*wristServiceCB_t)(uint8 event, uint8 param_len, uint8* param);
 
 extern int wristProfileResponseHRValue(uint8_t HR_Value);
 extern int wristProfileResponseHRRawData(uint8_t cnt, uint16_t* pdata);
-int wristProfileResponseSPO2Value(uint8_t SPO2_Value);
-int wristProfileResponseAccelerationData(int16_t *accBuf);
+extern int wristProfileResponseAccelerationData(int gx, int gy, int gz);
 extern int wristProfileResponseKScan(uint8_t num, uint8_t* key);
 
 extern bStatus_t wristProfile_AddService(wristServiceCB_t cb);

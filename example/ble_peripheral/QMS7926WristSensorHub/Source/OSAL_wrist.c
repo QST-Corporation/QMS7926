@@ -30,72 +30,107 @@
   
 **************************************************************************************************/
 
+
 /**************************************************************************************************
-  Filename:       heartrate.h
-  Revised:        $Date $
-  Revision:       $Revision $
-
-  Description:    This file contains the wrist demo application and prototypes.
-
-
-**************************************************************************************************/
-
-#ifndef __WRIST_H
-#define __WRIST_H
-
-#include "types.h"
+ *                                            INCLUDES
+ **************************************************************************************************/
+#include "OSAL.h"
+#include "OSAL_Tasks.h"
 
 
-/*********************************************************************
- * INCLUDES
- */
+/* HCI */
+#include "hci_tl.h"
 
-/*********************************************************************
- * CONSTANTS
- */
+/* LL */
+#include "ll.h"
 
 
-/** Wrist Task Events**/
-//start
-#define START_DEVICE_EVT                        0x0001
+/* L2CAP */
+#include "l2cap.h"
 
-//timer
-#define TIMER_UI_EVT                            0x0002  //for UI timer event
-#define TIMER_DT_EVT                            0x0004  //for datetime sync
-#define TOUCH_PRESS_EVT                         0x0008  //for touch key event
-#define TIMER_HR_EVT                            0x0010  //for heartrate detect
-#define TIMER_BATT_EVT                          0x0020  //for battery detect
-#define BATT_VALUE_EVT                          0x0040  //event for battery voltage value update
-#define BATT_CHARGE_EVT                         0x0080  //event for battery charge status change
-#define ACC_DATA_EVT                            0x0100  //event for accelerator data change
-#define TIMER_LIGHT_EVT                         0x0200  //for led light timeout
-#define TIMER_KSCAN_DEBOUNCE_EVT                0x0400  //for keyscan debounce
-#define TIMER_TEST_EVT                          0x0800  //for test
+/* gap */
+#include "gap.h"
+#include "gapgattserver.h"
+#include "gapbondmgr.h"
 
+/* GATT */
+#include "gatt.h"
 
+#include "gattservapp.h"
+
+/* Profiles */
+#include "peripheral.h"
+
+/* Application */
+#include "app_wrist.h"
 
 /*********************************************************************
- * MACROS
+ * GLOBAL VARIABLES
  */
+
+// The order in this table must be identical to the task initialization calls below in osalInitTask.
+const pTaskEventHandlerFn tasksArr[] =
+{
+  LL_ProcessEvent,
+  HCI_ProcessEvent,
+  L2CAP_ProcessEvent,
+  GAP_ProcessEvent,
+  GATT_ProcessEvent,
+  SM_ProcessEvent,
+  GAPRole_ProcessEvent,
+  GATTServApp_ProcessEvent,
+  appWristProcEvt
+};
+
+const uint8 tasksCnt = sizeof( tasksArr ) / sizeof( tasksArr[0] );
+uint16 *tasksEvents;
 
 /*********************************************************************
  * FUNCTIONS
- */
+ *********************************************************************/
 
-extern uint8 AppWrist_TaskID;
-
-/*
- * Task Initialization for the BLE Application
+/*********************************************************************
+ * @fn      osalInitTasks
+ *
+ * @brief   This function invokes the initialization function for each task.
+ *
+ * @param   void
+ *
+ * @return  none
  */
-extern void appWristInit( uint8 task_id );
+void osalInitTasks( void )
+{
+  uint8 taskID = 0;
 
-/*
- * Task Event Processor for the BLE Application
- */
-extern uint16 appWristProcEvt( uint8 task_id, uint16 events );
+  tasksEvents = (uint16 *)osal_mem_alloc( sizeof( uint16 ) * tasksCnt);
+  osal_memset( tasksEvents, 0, (sizeof( uint16 ) * tasksCnt));
+
+  /* LL Task */
+  LL_Init( taskID++ );
+
+  /* HCI Task */
+  HCI_Init( taskID++ );
+
+  /* L2CAP Task */
+  L2CAP_Init( taskID++ );
+
+  /* GAP Task */
+  GAP_Init( taskID++ );
+
+  /* GATT Task */
+  GATT_Init( taskID++ );
+
+  /* SM Task */
+  SM_Init( taskID++ );
+
+  /* Profiles */
+  GAPRole_Init( taskID++ );
+
+  GATTServApp_Init( taskID++ );
+
+  /* Application */
+  appWristInit( taskID );
+}
 
 /*********************************************************************
 *********************************************************************/
-
-
-#endif /* __WRIST_H */

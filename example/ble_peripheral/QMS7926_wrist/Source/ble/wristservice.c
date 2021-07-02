@@ -50,12 +50,10 @@
 #include "gatt_uuid.h"
 #include "gattservapp.h"
 #include "gapbondmgr.h"
-#include "app_err.h"
-#include "battery.h"
-//#include "hrs3300.h"
-#include "hrs/hx3690l.h"
-#include "QMA7981.h"
-#include "gps/gps.h"
+#include "ui_page.h"
+#include "led_light.h"
+//#include "em70xx.h"
+#include "hrs3300.h"
 #include "wristservice.h"
 #include "log.h"
 #include "error.h"
@@ -219,6 +217,8 @@ static wristServiceCB_t wristServiceCB = NULL;
 
 
 static wristService_t sWristService;
+
+static bool sNotifyAccelerationDataFlag = FALSE;
 static char	s_msg_notif_data[MSG_NOTIF_SIZE];
 
 
@@ -261,7 +261,6 @@ static void print_hex (const uint8 *data, uint16 len)
 static int cmd_query_version(const uint8* data)
 {
   wristRspVersion_t version;
-  memset((uint8*)(&version), 0x00, sizeof(version));
   version.cmd = data[0];  //cmd
   version.csn = data[1];  //csn
   version.ver_fw[0] = 1;//FW_VER_MAJOR;
@@ -329,58 +328,38 @@ static int cmd_HR_get_status(const uint8_t* data, uint16_t len)
 
   return cmd_response_err(data, len, 0);
 }
-
 static int cmd_HR_start(const uint8_t* data, uint16_t len)
 {
-  hx3690l_init(HRS_MODE);
+  Hrs3300_chip_enable();
+  Hrs3300_alg_open();
   return cmd_response_err(data, len, APP_ERR_NOT_IMPLEMENTED);
 }
-
 static int cmd_HR_stop(const uint8_t* data, uint16_t len)
 {
-  //hx3690l_ppg_off();
-  hx3690l_hrs_disable();
+  Hrs3300_chip_disable();
   return cmd_response_err(data, len, APP_SUCCESS);
 }
 
-static int cmd_SPO2_start(const uint8_t* data, uint16_t len)
+static int cmd_acc_notif_start(const uint8* data, uint16 len)
 {
-  hx3690l_init(SPO2_MODE);
+  sNotifyAccelerationDataFlag = TRUE;
   return cmd_response_err(data, len, APP_SUCCESS);
 }
 
-static int cmd_SPO2_stop(const uint8_t* data, uint16_t len)
+static int cmd_acc_notif_stop(const uint8* data, uint16 len)
 {
-  //hx3690l_ppg_off();
-  hx3690l_spo2_disable();
+  sNotifyAccelerationDataFlag = FALSE;
   return cmd_response_err(data, len, APP_SUCCESS);
 }
 
-static int cmd_acc_raw_notif_start(const uint8* data, uint16 len)
+static int cmd_light_ctrl(const uint8_t* data, uint16_t len)
 {
-  QMA7981_acc_report_start(1000);
-  return cmd_response_err(data, len, APP_SUCCESS);
+  int ret;
+  wristCmdLight_t* plight = (wristCmdLight_t*)data;
+  ret = light_ctrl(plight->ch, plight->value);
+  ret = (ret == PPlus_SUCCESS) ? APP_SUCCESS: APP_ERR_PARAM;
+  return cmd_response_err(data, len, ret);
 }
-
-static int cmd_acc_raw_notif_stop(const uint8* data, uint16 len)
-{
-  QMA7981_acc_report_stop();
-  return cmd_response_err(data, len, APP_SUCCESS);
-}
-
-static int cmd_acc_step_notif_start(const uint8* data, uint16 len)
-{
-  QMA7981_step_report_start(2000);
-  return cmd_response_err(data, len, APP_SUCCESS);
-}
-
-static int cmd_acc_step_notif_stop(const uint8* data, uint16 len)
-{
-  QMA7981_step_report_stop();
-  return cmd_response_err(data, len, APP_SUCCESS);
-}
-
-
 
 static int cmd_lookup_bracelet(const uint8* data, uint16 len)
 {
@@ -407,12 +386,11 @@ static int cmd_read_batt_volt(const uint8* data, uint16 len)
 void msg_notif_dispatch(void)
 {
   notifInfo_t* p_notifInfo = &(sWristService.notifInfo);
-  //ui_ev_t ev;
+  ui_ev_t ev;
   switch(p_notifInfo->type){
   case MSG_NOTIF_T_UNDEF:// 0
     break;
   case MSG_NOTIF_T_CALL://  1
-  #if 0
     ev.ev = UI_EV_BLE_CALL;
     ui_fsm_run(&ev);
     ev.ev = UI_EV_BLE_CALL_INFO;
@@ -447,7 +425,6 @@ void msg_notif_dispatch(void)
     ev.ev = UI_EV_BLE_MSG_NOTIFY;
     ev.data = (uint8*)p_notifInfo->data;
     ui_fsm_run(&ev);
-  #endif
     break;
   default:
     break;
@@ -548,30 +525,18 @@ int on_recieved_cmd_packet(const uint8* data, uint16 len)
   case  WRIST_CMD_HR_STOP:
     ret = cmd_HR_stop(data, len);
     break;
-  case  WRIST_CMD_SPO2_START:
-    ret = cmd_SPO2_start(data, len);
+
+  case  WRIST_CMD_ACC_NOTIF_START:
+    ret = cmd_acc_notif_start(data, len);
     break;
-  case  WRIST_CMD_SPO2_STOP:
-    ret = cmd_SPO2_stop(data, len);
+  case  WRIST_CMD_ACC_NOTIF_STOP:
+    ret = cmd_acc_notif_stop(data, len);
     break;
-  case  WRIST_CMD_ACC_RAW_NOTIF_START:
-    ret = cmd_acc_raw_notif_start(data, len);
+    
+  case  WRIST_CMD_LIGHT_CTRL:
+    ret = cmd_light_ctrl(data, len);
     break;
-  case  WRIST_CMD_ACC_RAW_NOTIF_STOP:
-    ret = cmd_acc_raw_notif_stop(data, len);
-    break;
-  case  WRIST_CMD_ACC_STEP_NOTIF_START:
-    ret = cmd_acc_step_notif_start(data, len);
-    break;
-  case  WRIST_CMD_ACC_STEP_NOTIF_STOP:
-    ret = cmd_acc_step_notif_stop(data, len);
-    break;
-  case WRIST_CMD_GPS_TX:
-    uint8_t gps_data[5] = {0x11,0x22,0x33,0x44,0x55};
-    gps_data_transmit(gps_data, sizeof(gps_data));
-    break;
-  case WRIST_CMD_GPS_RX:
-    break;
+    
   case  WRIST_CMD_MSG_NOTIF:
     ret = cmd_msg_notification(data, len);
     break;
@@ -656,39 +621,26 @@ int wristProfileResponseHRRawData(uint8_t cnt, uint16_t* pdata)
   memcpy(rawdata.raw, pdata, cnt*2);
   rawdata.chksum = checksum((uint8*)(&rawdata), sizeof(rawdata)-1);
   return cmd_response((uint8*)(&rawdata), sizeof(rawdata));
-}
 
-int wristProfileResponseSPO2Value(uint8_t SPO2_Value)
-{
-  wristRspHrValue_t value;
-  value.cmd = WRIST_NOTIFY_SPO2;
-  value.csn = 0;
-  value.value = SPO2_Value;
-  value.chksum = checksum((uint8*)(&value), sizeof(value)-1);
-  return cmd_response((uint8*)(&value), sizeof(value));
 }
 
 /*acc_value: 1000 == 1G*/
-int wristProfileResponseAccelerationData(int16_t *accBuf)
+int wristProfileResponseAccelerationData(int gx, int gy, int gz)
 {
-  wristRspAcc_t accdata;
-  accdata.cmd = WRIST_NOTIFY_ACC;
-  accdata.csn = 0;
-  LOG("%d,  %d, %d\n",accBuf[0], accBuf[1], accBuf[2]);
-  memcpy(accdata.acc, (void*)accBuf, sizeof(int16_t)*3);
-  accdata.chksum = checksum((uint8*)(&accdata), sizeof(accdata)-1);
-  return cmd_response((uint8*)(&accdata), sizeof(accdata));
-}
-
-/*step_value: uint32_t*/
-int wristProfileResponseStepCount(uint32_t *stepNum)
-{
-  wristRspStep_t rspStep;
-  rspStep.cmd = WRIST_NOTIFY_STEP;
-  rspStep.csn = 0;
-  LOG("Step: %d\n", stepNum);
-  rspStep.chksum = checksum((uint8*)(&rspStep), sizeof(rspStep)-1);
-  return cmd_response((uint8*)(&rspStep), sizeof(rspStep));
+  if(sNotifyAccelerationDataFlag){
+    int acc[3]; 
+    wristRspAcc_t accdata;
+    acc[0] = gx;
+    acc[1] = gy;
+    acc[2] = gz;
+    accdata.cmd = WRIST_NOTIFY_ACC;
+    accdata.csn = 0;
+    LOG("%d,  %d, %d\n",gx,gy,gz);
+    memcpy(accdata.acc, (void*)acc, 4*3);
+    accdata.chksum = checksum((uint8*)(&accdata), sizeof(accdata)-1);
+    return cmd_response((uint8*)(&accdata), sizeof(accdata));
+  }
+  return APP_SUCCESS;
 }
 
 /*response key scan data*/

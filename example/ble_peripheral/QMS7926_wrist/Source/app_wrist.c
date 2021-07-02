@@ -42,7 +42,6 @@
  * INCLUDES
  */
 
-#include <string.h>
 #include "bcomdef.h"
 #include "OSAL.h"
 #include "linkdb.h"
@@ -56,13 +55,17 @@
 #include "peripheral.h"
 #include "gapbondmgr.h"
 #include "app_wrist.h"
-#include "hrs/hx3690l.h"
+#include "ui_page.h"
+#include "ui_task.h"
+#include "ui_display.h"
+#include "ui_dispTFT.h"
+#include "touch_key.h"
+//#include "em70xx.h"
+#include "hrs3300.h"
 #include "QMA7981.h"
 #include "battery.h"
+#include "led_light.h"
 #include "kscan.h"
-#include "host_comm.h"
-#include "gps/gps.h"
-#include "pwrmgr.h"
 #include "log.h"
 
 /*********************************************************************
@@ -230,12 +233,20 @@ static const gapBondCBs_t WristBondCB =
 //static KSCAN_ROWS_e kscan_rows[NUM_KEY_ROWS] = {KEY_ROW_P00,KEY_ROW_P02,KEY_ROW_P25,KEY_ROW_P18}; 
 //static KSCAN_COLS_e kscan_cols[NUM_KEY_COLS] = {KEY_COL_P01,KEY_COL_P03,KEY_COL_P24,KEY_COL_P20};
 
+
+
 static void on_HeartRateValueUpdate(hr_ev_t* pev)
 {
   switch(pev->ev){
   case HR_EV_HR_VALUE:
     {
+      ui_ev_t ev = {
+          .ev = UI_EV_HEARTRATE,
+          .param = (uint16)pev->value,
+          .data = NULL
+      };
       wristProfileResponseHRValue(pev->value);
+      ui_fsm_run(&ev);
     }
     break;
   case HR_EV_RAW_DATA:
@@ -243,16 +254,24 @@ static void on_HeartRateValueUpdate(hr_ev_t* pev)
       wristProfileResponseHRRawData(pev->value, pev->data);
     }
     break;
-  case HR_EV_SPO2_VALUE:
-    {
-      wristProfileResponseSPO2Value(pev->value);
-    }
-    break;
   default:
     break;
   }
 }
 
+
+
+
+
+
+
+
+
+void on_touchKey(touch_evt_t key_evt)
+{
+  
+  osal_set_event(AppWrist_TaskID, TOUCH_PRESS_EVT);
+}
 
 void on_kscan_evt(kscan_Evt_t* kscan_evt)
 {
@@ -271,33 +290,35 @@ void on_kscan_evt(kscan_Evt_t* kscan_evt)
 
 void on_QMA7981_evt(QMA7981_ev_t* pev)
 {
-  if(pev->ev == acc_event){
-    wristProfileResponseAccelerationData((int16_t *)pev->data);
+  int g_acc_value[3];
+  if(pev->ev == wmi_event){
+    int i;
+    int gx = 0,gy = 0,gz = 0;
+  	int16_t *acc_data = (int16_t *)pev->data;
+    for(i = 0; i < pev->size/(sizeof(int16_t)*3); i++)
+    {
+      gx += (int)acc_data[0];
+      gy += (int)acc_data[1];
+      gz += (int)acc_data[2];
+      acc_data+=3;
+    }
+    //LOG("X%d,Y%d,Z%d\n",gx,gy,gz);
+    
+    gx = gx*6/pev->size;
+    gy = gy*6/pev->size;
+    gz = gz*6/pev->size;
+    //LOG("X%d,Y%d,Z%d\n",gx,gy,gz);
+    g_acc_value[0] = gx;
+    g_acc_value[1] = gy;
+    g_acc_value[2] = gz;
+    if(gx==0 && gy==0 &&gz==0)
+      return;
+    ui_accelerator_event(g_acc_value);
+    wristProfileResponseAccelerationData(gx/4,gy/4,gz/4);
+    
   }
-#if defined(QMA7981_STEPCOUNTER)
-  else if(pev->ev == step_event){
-    uint32_t stepNumber;
-    memcpy(&stepNumber, pev->data, sizeof(uint32_t));
-    LOG(" step number: %d\n", stepNumber);
-  }
-#endif
-#if defined(QMA7981_HAND_UP_DOWN)
-  else if (pev->ev == handUp_event) {
-    LOG(" hand raise!\n");
-  }
-  else if (pev->ev == handDown_event) {
-    LOG(" hand down!\n");
-  }
-#endif
 }
 
-void host_wakeup_evt(GPIO_Pin_e pin,IO_Wakeup_Pol_e type)
-{
-  hal_pwrmgr_lock(MOD_USR1);
-  host_spi_deinit();
-  host_spi_init();
-  //osal_start_timerEx(AppWrist_TaskID, HOST_SPI_EVT, 16);
-}
 
 /*********************************************************************
  * PUBLIC FUNCTIONS
@@ -338,60 +359,79 @@ void appWristInit( uint8 task_id )
     uint16 desired_slave_latency = DEFAULT_DESIRED_SLAVE_LATENCY;
     uint16 desired_conn_timeout = DEFAULT_DESIRED_CONN_TIMEOUT;
     uint8 peerPublicAddr[] = {
-      0x01,
-      0x02,
-      0x03,
-      0x04,
-      0x05,
-      0x06
-    };
+			0x01,
+			0x02,
+			0x03,
+			0x04,
+			0x05,
+			0x06
+		};
 
     GAPRole_SetParameter(GAPROLE_ADV_DIRECT_ADDR, sizeof(peerPublicAddr), peerPublicAddr);
     // set adv channel map
     GAPRole_SetParameter(GAPROLE_ADV_CHANNEL_MAP, sizeof(uint8), &advChnMap);        
-
+    
     // Set the GAP Role Parameters
     GAPRole_SetParameter( GAPROLE_ADVERT_ENABLED, sizeof( uint8 ), &initial_advertising_enable );
     GAPRole_SetParameter( GAPROLE_ADVERT_OFF_TIME, sizeof( uint16 ), &gapRole_AdvertOffTime );
-
+    
     GAPRole_SetParameter( GAPROLE_SCAN_RSP_DATA, sizeof ( scanData ), scanData );
     GAPRole_SetParameter( GAPROLE_ADVERT_DATA, sizeof( advertData ), advertData );
-
+    
     GAPRole_SetParameter( GAPROLE_PARAM_UPDATE_ENABLE, sizeof( uint8 ), &enable_update_request );
     GAPRole_SetParameter( GAPROLE_MIN_CONN_INTERVAL, sizeof( uint16 ), &desired_min_interval );
     GAPRole_SetParameter( GAPROLE_MAX_CONN_INTERVAL, sizeof( uint16 ), &desired_max_interval );
     GAPRole_SetParameter( GAPROLE_SLAVE_LATENCY, sizeof( uint16 ), &desired_slave_latency );
     GAPRole_SetParameter( GAPROLE_TIMEOUT_MULTIPLIER, sizeof( uint16 ), &desired_conn_timeout );
   }
-
+  
   // Set the GAP Characteristics
   GGS_SetParameter( GGS_DEVICE_NAME_ATT, GAP_DEVICE_NAME_LEN, attDeviceName );
+
 
   // Set advertising interval
   {
       uint16 advInt = 400;   // actual time = advInt * 625us
+  
       GAP_SetParamValue( TGAP_LIM_DISC_ADV_INT_MIN, advInt );
       GAP_SetParamValue( TGAP_LIM_DISC_ADV_INT_MAX, advInt );
       GAP_SetParamValue( TGAP_GEN_DISC_ADV_INT_MIN, advInt );
       GAP_SetParamValue( TGAP_GEN_DISC_ADV_INT_MAX, advInt );
   }
-
+  
   // Initialize GATT attributes
   GGS_AddService( GATT_ALL_SERVICES );         // GAP
   GATTServApp_AddService( GATT_ALL_SERVICES ); // GATT attributes
   DevInfo_AddService( );
   wristProfile_AddService(wristCB);
   ota_app_AddService();
-
+  
   app_datetime_init();
 
   // Setup a delayed profile startup
   osal_set_event( AppWrist_TaskID, START_DEVICE_EVT );
-  hx3690l_register(on_HeartRateValueUpdate);
-  host_wakeup_register(host_wakeup_evt);
-  gps_uart_config(AppWrist_TaskID);
-  //batt_init();
-  QMA7981_init(on_QMA7981_evt);
+  light_init();
+//  light_ctrl(0,10);
+//  light_ctrl(1,50);
+//  light_ctrl(2,80);
+//  light_ctrl(0,0);
+//  light_ctrl(1,0);
+//  light_ctrl(2,0);
+  hrs3300_register(on_HeartRateValueUpdate);
+  touch_init(on_touchKey);
+  ui_init();
+  batt_init();
+	QMA7981_init(on_QMA7981_evt);
+  {
+//    kscan_Cfg_t kcfg;
+//    kcfg.ghost_key_state = NOT_IGNORE_GHOST_KEY;
+//    kcfg.key_rows = kscan_rows;
+//    kcfg.key_cols = kscan_cols;
+//    kcfg.interval = 50;
+//    kcfg.evt_handler = on_kscan_evt;
+    //hal_kscan_init(kcfg, AppWrist_TaskID, TIMER_KSCAN_DEBOUNCE_EVT);
+  }
+
 }
 
 /*********************************************************************
@@ -427,6 +467,8 @@ uint16 appWristProcEvt( uint8 task_id, uint16 events )
     // return unprocessed events
     return (events ^ SYS_EVENT_MSG);
   }
+ 
+  
 
   if ( events & START_DEVICE_EVT )
   {
@@ -439,25 +481,22 @@ uint16 appWristProcEvt( uint8 task_id, uint16 events )
     return ( events ^ START_DEVICE_EVT );
   }
 
-  if ( events & HOST_CMD_EVT )
-  {
-    host_spi_command_handler();
-    //hal_pwrmgr_unlock(MOD_USR1);
-    return ( events ^ HOST_CMD_EVT );
-  }
-
-  if ( events & SLAVE_TX_COMPLETED_EVT )
-  {
-    LOG("SLAVE_TX_COMPLETED_EVT\n");
-    host_wakeup_register(host_wakeup_evt);
-    hal_pwrmgr_unlock(MOD_USR1);
-    return ( events ^ SLAVE_TX_COMPLETED_EVT );
-  }
-
   if( events & TIMER_DT_EVT)
   {
     app_datetime_sync_handler();
     return ( events ^ TIMER_DT_EVT );
+  }
+  if( events & TIMER_UI_EVT)
+  {
+    ui_page_timer_evt(NULL);
+
+    return ( events ^ TIMER_UI_EVT );
+  }
+  if( events & TOUCH_PRESS_EVT)
+  {
+    ui_key_evt(NULL);
+
+    return ( events ^ TOUCH_PRESS_EVT );
   }
   if( events & TIMER_HR_EVT)
   {
@@ -474,42 +513,30 @@ uint16 appWristProcEvt( uint8 task_id, uint16 events )
   {
     batt_evt_t evt = batt_charge_detect() ? BATT_CHARGE_PLUG : BATT_CHARGE_UNPLUG;
     LOG("batt_evt_t %d\n", evt);
-    //ui_batt_event(evt);
+    ui_batt_event(evt);
     return ( events ^ BATT_CHARGE_EVT);
   }
   if( events & BATT_VALUE_EVT)
   {
-    //ui_batt_event(BATT_VOLTAGE);
+    ui_batt_event(BATT_VOLTAGE);
     return ( events ^ BATT_VALUE_EVT);
   }
-  if( events & ACC_DATA_REPORT_EVT)
+  if( events & ACC_DATA_EVT)
   {
-    QMA7981_report_acc();
-    return ( events ^ ACC_DATA_REPORT_EVT);
+		drv_QMA7981_event_handle();
+    return ( events ^ ACC_DATA_EVT);
   }
-  if( events & ACC_STEP_REPORT_EVT)
+  
+  if( events & TIMER_LIGHT_EVT)
   {
-#if defined(QMA7981_STEPCOUNTER)
-    QMA7981_report_stepcounter();
-#endif
-    return ( events ^ ACC_STEP_REPORT_EVT);
+		light_timeout_handle();
+    return ( events ^ TIMER_LIGHT_EVT);
   }
-  if( events & ACC_INT_EVT)
+  
+  if( events & TIMER_KSCAN_DEBOUNCE_EVT)
   {
-    QMA7981_report_handup();
-    return ( events ^ ACC_INT_EVT);
-  }
-  if( events & WRIST_GPS_RX_TIMEOUT_EVT)
-  {
-    gps_receive_handler();
-    return ( events ^ WRIST_GPS_RX_TIMEOUT_EVT);
-  }
-  if( events & ACC_SLEEP_FIFO_SET_EVT)
-  {
-#ifdef SLEEP_AlGORITHM
-    qma7981_read_fifo();
-#endif
-    return ( events ^ ACC_SLEEP_FIFO_SET_EVT);
+    hal_kscan_timeout_handler();
+    return ( events ^ TIMER_KSCAN_DEBOUNCE_EVT);
   }
 
   // Discard unknown events

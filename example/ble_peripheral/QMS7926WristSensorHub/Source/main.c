@@ -40,7 +40,6 @@
 #include "ll_hw_drv.h"
 #include "ll_sleep.h"
 
-#include "touch_key.h"
 #include "uart.h"
 #include "gpio.h"
 #include "clock.h"
