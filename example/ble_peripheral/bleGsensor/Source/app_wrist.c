@@ -56,6 +56,7 @@
 #include "gapbondmgr.h"
 #include "app_wrist.h"
 #include "QMA7981.h"
+#include "pwrmgr.h"
 //#include "battery.h"
 #include "stdio.h"
 #include "string.h"
@@ -237,6 +238,8 @@ void QMA7981_report_evt(QMA7981_ev_t* pev)
     LOG(" hand down!\n");
   }
 #endif
+
+  hal_pwrmgr_unlock(MOD_USR1);
 }
 
 /*********************************************************************

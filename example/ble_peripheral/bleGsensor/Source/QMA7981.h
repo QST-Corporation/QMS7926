@@ -37,6 +37,7 @@
 #define     QMA7981_HAND_UP_DOWN
 //#define     SLEEP_AlGORITHM
 //#define     QMA7981_ANY_MOTION
+#define     QMA7981_INT_LATCH
 
 #define     QMA7981_SLAVE_ADDR              0x12
 #define     QMA7981_LAYOUT                  0
@@ -228,8 +229,8 @@
 #define QST_SLEEP_TIMER_CYC			60			// timer cycle one minute
 #define QST_SLEEP_FIFO_LEN                  32
 #define QST_SLEEP_FIFO_SET_INTERVAL         62	// 2s to sample 32 group data
-#define QST_SLEEP_LIGHTSLEEP_CONTINUE_NUM			3	// 6  ���ѵ�ǳ˯3���� 6~8
-#define QST_SLEEP_DEEPSLEEP_CONTINUE_NUM			10	// 20  ǳ˯����˯��ʱ��20~30
+#define QST_SLEEP_LIGHTSLEEP_CONTINUE_NUM			3	// 6  锟斤拷锟窖碉拷浅睡3锟斤拷锟斤拷 6~8
+#define QST_SLEEP_DEEPSLEEP_CONTINUE_NUM			10	// 20  浅睡锟斤拷锟斤拷睡锟斤拷时锟斤拷20~30
 
 #define QST_SLEEP_RECORD_LEN						1000
 #define QST_SLEEP_RECORD_COUNT_MIN					8
@@ -244,8 +245,8 @@
 #define QST_SLEEP_BIGMOTION_LIGHT_THRESHOLD			2.0 
 #define QST_SLEEP_BIGMOTION_AWAKE_THRESHOLD			8.0 
 // big motion  threshol
-#define  STEPCOUNTER_THRESHOLD_REG_ENTRY_SLEEP      Step_SENSITIVITY //�Ʋ���������  0x13�Ĵ�����ֵ
-#define  STEPCOUNTER_THRESHOLD_REG_QUIT_SLEEP       Step_SENSITIVITY //�Ʋ���������  0x13�Ĵ�����ֵ
+#define  STEPCOUNTER_THRESHOLD_REG_ENTRY_SLEEP      Step_SENSITIVITY //锟狡诧拷锟斤拷锟斤拷锟斤拷锟斤拷  0x13锟侥达拷锟斤拷锟斤拷值
+#define  STEPCOUNTER_THRESHOLD_REG_QUIT_SLEEP       Step_SENSITIVITY //锟狡诧拷锟斤拷锟斤拷锟斤拷锟斤拷  0x13锟侥达拷锟斤拷锟斤拷值
 typedef enum
 {
 	QST_SLEEP_NONE,

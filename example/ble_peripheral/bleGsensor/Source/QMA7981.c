@@ -46,6 +46,7 @@
 #include "i2c.h"
 #include "log.h"
 #include "app_wrist.h"
+#include "pwrmgr.h"
 
 typedef struct _QMA7981_ctx_t{
   bool              module_valid;
@@ -147,6 +148,7 @@ static void QMA7981_int_handler(GPIO_Pin_e pin,IO_Wakeup_Pol_e type)
 
   //if(type == POSEDGE)
   //{
+    hal_pwrmgr_lock(MOD_USR1);
 
     QST_i2c_read(pi2c, QMA7981_INT_ST0, r_data, 3);
     //LOG("r_data:%x,%x,%x\n",r_data[0],r_data[1],r_data[2]);
@@ -553,7 +555,7 @@ static int QMA7981_config(void)
 #endif
 
 #if defined(QMA7981_INT_LATCH)
-    QST_i2c_write(pi2c, 0x21, 0x1f);  // default 0x1c, step latch mode
+    QST_i2c_write(pi2c, 0x21, 0x1f);  // default 0x1c, INT latch mode
 #endif
     // int default level set
     //QST_i2c_write(pi2c, 0x20, 0x00);
@@ -755,7 +757,12 @@ int QMA7981_init(QMA7981_evt_hdl_t evt_hdl)
 
     s_QMA7981_ctx.evt_hdl = evt_hdl;
 
+    hal_gpio_pin_init(P5, IE);
+    hal_gpio_pull_set(P5, PULL_DOWN);
     ret = hal_gpioin_register(P5, QMA7981_int_handler, NULL );
+    hal_gpio_wakeup_set(P5, POSEDGE);
+    hal_pwrmgr_register(MOD_USR1, NULL, NULL);
+
     ret = QMA7981_config();
     LOG("QMA7981 initialize: %d\n",ret);
 
@@ -764,7 +771,7 @@ int QMA7981_init(QMA7981_evt_hdl_t evt_hdl)
       return ret;
     }
     s_QMA7981_ctx.module_valid = true;
-    QMA7981_acc_report_start(1000);
+    //QMA7981_acc_report_start(1000);
 
     return PPlus_SUCCESS;
 }
