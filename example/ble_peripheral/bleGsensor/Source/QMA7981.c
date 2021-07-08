@@ -60,6 +60,7 @@ typedef struct _QMA7981_ctx_t{
 static QMA7981_ctx_t s_QMA7981_ctx;
 uint16_t g_qma7981_lsb_1g;
 float  g_qma7981_cust_lsb_mg;
+QMA7981_ev_t gAccIntEvt;
 
 /*  
 qma7981 odr setting
@@ -155,6 +156,7 @@ static void QMA7981_int_handler(GPIO_Pin_e pin,IO_Wakeup_Pol_e type)
     if(r_data[0] & 0xF)
     {
       int_type = 1;
+      gAccIntEvt.ev = anymotion_evt;
     }
     else if(r_data[0] & 0x80)
     {
@@ -163,11 +165,13 @@ static void QMA7981_int_handler(GPIO_Pin_e pin,IO_Wakeup_Pol_e type)
       reg_0x1a &= 0x7f;
       QST_i2c_write(pi2c, 0x1a, reg_0x1a);    // disable nomotion
       int_type = 2;
+      gAccIntEvt.ev = nomotion_evt;
       //LOG(" no motion!\n");
     }
     else if(r_data[1] & 0x01)
     {
       int_type = 3;
+      gAccIntEvt.ev = sigmotion_evt;
 
       QST_i2c_read(pi2c, 0x1a, &reg_0x1a, 1);
       reg_0x1a |= 0x80;     // enable nomotion
@@ -178,26 +182,30 @@ static void QMA7981_int_handler(GPIO_Pin_e pin,IO_Wakeup_Pol_e type)
     else if(r_data[1] & 0x40)
     {
       int_type = 4;
+      gAccIntEvt.ev = sigstep_evt;
       //LOG("  significant step int!\n");
     }
     else if(r_data[1] & 0x08)
     {
       int_type = 5;
+      gAccIntEvt.ev = step_evt;
       //LOG(" step int!\n");
     }
 #if defined(QMA7981_HAND_UP_DOWN)
     else if(r_data[1] & 0x02)
     {
       int_type = 6;
+      gAccIntEvt.ev = handUp_evt;
       //LOG(" hand raise!\n");
     }
     else if(r_data[1] & 0x04)
     {
       int_type = 7;
+      gAccIntEvt.ev = handDown_evt;
       //LOG(" hand down!\n");
     }
 #endif
-    //LOG("int_type:%d\n", int_type);
+    LOG("int_type:%d\n", int_type);
     osal_set_event(AppWrist_TaskID, ACC_INT_EVT);
     QST_i2c_deinit(pi2c);
 // }
@@ -692,7 +700,7 @@ uint8_t QMA7981_report_acc(void)
     acc_data[1] = ((int32_t)acc_raw[1]*GRAVITY_EARTH_1000)/(g_qma7981_lsb_1g);
     acc_data[2] = ((int32_t)acc_raw[2]*GRAVITY_EARTH_1000)/(g_qma7981_lsb_1g);
 
-    ev.ev = acc_event;
+    ev.ev = acc_data_evt;
     ev.size = 6;// 3;
     ev.data = acc_data; //acc_raw
     s_QMA7981_ctx.evt_hdl(&ev);
@@ -708,7 +716,7 @@ uint8_t QMA7981_report_stepcounter(void)
     osal_start_timerEx(AppWrist_TaskID, ACC_STEP_REPORT_EVT, s_QMA7981_ctx.step_report_intval);
     stepCount = QMA7981_read_stepcounter();
 
-    ev.ev = step_event;
+    ev.ev = step_evt;
     ev.size = 1;
     ev.data = &stepCount;
     s_QMA7981_ctx.evt_hdl(&ev);
@@ -716,11 +724,22 @@ uint8_t QMA7981_report_stepcounter(void)
 }
 #endif
 
-void QMA7981_report_handup(void)
+void QMA7981_report_int(void)
 {
     QMA7981_ev_t evt;
-    evt.ev = handUp_event;
-    evt.size = 0;
+    uint32_t stepCount = 0;
+
+    evt.ev = gAccIntEvt.ev;
+    if(evt.ev == step_evt)
+    {
+#if defined(QMA7981_STEPCOUNTER)
+        stepCount = QMA7981_read_stepcounter();
+#endif
+        evt.size = 1;
+        evt.data = &stepCount;
+    } else {
+        evt.size = 0;
+    }
     s_QMA7981_ctx.evt_hdl(&evt);
 }
 

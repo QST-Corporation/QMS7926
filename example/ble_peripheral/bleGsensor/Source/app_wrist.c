@@ -210,7 +210,7 @@ static const gapBondCBs_t WristBondCB =
 
 void QMA7981_report_evt(QMA7981_ev_t* pev)
 {
-  if(pev->ev == acc_event){
+  if(pev->ev == acc_data_evt){
     int gx = 0,gy = 0,gz = 0;
   	int32_t *acc_data = (int32_t *)pev->data;
     //LOG("%s 2\n",__func__);
@@ -224,18 +224,23 @@ void QMA7981_report_evt(QMA7981_ev_t* pev)
     wristProfileResponseAccelerationData(gx,gy,gz);
   }
 #if defined(QMA7981_STEPCOUNTER)
-  else if(pev->ev == step_event){
+  else if(pev->ev == step_evt){
     uint32_t stepNumber;
     osal_memcpy(&stepNumber, pev->data, sizeof(uint32_t));
     LOG(" step number: %d\n", stepNumber);
   }
 #endif
 #if defined(QMA7981_HAND_UP_DOWN)
-  else if (pev->ev == handUp_event) {
+  else if (pev->ev == handUp_evt) {
     LOG(" hand raise!\n");
   }
-  else if (pev->ev == handDown_event) {
+  else if (pev->ev == handDown_evt) {
     LOG(" hand down!\n");
+  }
+#endif
+#if defined(QMA7981_ANY_MOTION)
+  else if (pev->ev == anymotion_evt) {
+    LOG(" anymotion!\n");
   }
 #endif
 
@@ -309,7 +314,7 @@ void appWristInit( uint8 task_id )
 
   // Set advertising interval
   {
-      uint16 advInt = 400;   // actual time = advInt * 625us
+      uint16 advInt = 3200;//400;   // actual time = advInt * 625us
   
       GAP_SetParamValue( TGAP_LIM_DISC_ADV_INT_MIN, advInt );
       GAP_SetParamValue( TGAP_LIM_DISC_ADV_INT_MAX, advInt );
@@ -395,7 +400,7 @@ uint16 appWristProcEvt( uint8 task_id, uint16 events )
   }
   if( events & ACC_INT_EVT)
   {
-    QMA7981_report_handup();
+    QMA7981_report_int();
     return ( events ^ ACC_INT_EVT);
   }
 

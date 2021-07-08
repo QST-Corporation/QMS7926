@@ -262,13 +262,14 @@ typedef enum
 
 
 enum{
-	handUp_event   = 0x01,	//hand raise
-	handDown_event = 0x02,	//hand down
-	stap_event     = 0x04,	//single tap
-	dtap_event     = 0x08,  //double tap
-	wmi_event      = 0x10,	//acceleration data
-	acc_event      = 0x20,	//tilt event
-  step_event     = 0x40   //step counter
+  handUp_evt     = 0x01,  //hand raise
+  handDown_evt   = 0x02,  //hand down
+  anymotion_evt  = 0x04,  //anymotion
+  nomotion_evt   = 0x08,  //nomotion
+  sigmotion_evt  = 0x10,  //SIG_MOT_INT
+  acc_data_evt   = 0x20,  //acceleration data
+  sigstep_evt    = 0x40,  //sign_step
+  step_evt       = 0x80   //step counter
 };
 
 typedef struct _QMA7981_ev_t{
@@ -284,7 +285,7 @@ uint8_t QMA7981_read_acc(float *accData);
 void QMA7981_acc_report_start(uint32_t report_intval_ms);
 void QMA7981_acc_report_stop(void);
 uint8_t QMA7981_report_acc(void);
-void QMA7981_report_handup(void);
+void QMA7981_report_int(void);
 void QMA7981_deep_sleep(void);
 void QMA7981_wake_up(void);
 void QMA7981_disable(void);
