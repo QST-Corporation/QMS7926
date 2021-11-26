@@ -525,6 +525,7 @@ static int hal_spi_xmit_polling(hal_spi_t* spi_ptr,uint8_t* tx_buf,uint8_t* rx_b
         else
           Ssix->DataReg = 0;
       }
+      LOG("tx_size:%d, tmp:%d\n",tx_size, tmp_len);
       tx_size -= tmp_len;
     }
     if(Ssix->RXFLR){
@@ -532,6 +533,7 @@ static int hal_spi_xmit_polling(hal_spi_t* spi_ptr,uint8_t* tx_buf,uint8_t* rx_b
       for(i = 0; i< tmp_len; i++){
         *rx_buf++= Ssix->DataReg;
       }
+      LOG("rx_size:%d\n",rx_size);
       rx_size -= tmp_len;
     }
 		if(rx_size == 0)
@@ -897,11 +899,12 @@ int hal_spi_bus_deinit(hal_spi_t* spi_ptr)
   SPI_HDL_VALIDATE(spi_ptr);
   
   clk_gate_disable((MODULE_e)(MOD_SPI0 + spi_ptr->spi_index));
-  //spi_int_disable(spi_ptr);
-  
+  spi_int_disable(spi_ptr);
+
   hal_spi_pin_deinit(m_spiCtx[spi_ptr->spi_index].cfg.sclk_pin,m_spiCtx[spi_ptr->spi_index].cfg.ssn_pin,m_spiCtx[spi_ptr->spi_index].cfg.MOSI,m_spiCtx[spi_ptr->spi_index].cfg.MISO);
-  memset(&m_spiCtx,0,2*sizeof(spi_Ctx_t));
-  
+  memset(&m_spiCtx[spi_ptr->spi_index],0,sizeof(hal_spi_t));//memset(m_spiCtx,0,2*sizeof(spi_Ctx_t));
+  m_spiCtx[spi_ptr->spi_index].spi_info = NULL;
+
   return PPlus_SUCCESS;
 }
 
