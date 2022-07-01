@@ -52,7 +52,7 @@
 #include "adc.h"
 #include "gpio.h"
 #include "uart.h"
-#include "i2c_s.h"
+#include "i2c_common.h"
 #include "kscan.h"
 #include "rflib.h"
 #include "log.h"
@@ -130,8 +130,8 @@ const uint32_t* const jump_table_base[256] __attribute__((section("jump_table_me
 		(const uint32_t*)hal_KSCAN_IRQHandler,       // 228 - 229
     0, 0, 0, (const uint32_t*)AP_TIMER_IRQHandler, 0,  // 230 - 234       
     (const uint32_t*)hal_UART0_IRQHandler,      // 235 uart irq handler
-		(const uint32_t*)hal_I2C0_IRQHandler,
-		(const uint32_t*)hal_I2C1_IRQHandler,
+		(const uint32_t*)Hal_I2C0_IRQHandler,
+		(const uint32_t*)Hal_I2C1_IRQHandler,
 		(const uint32_t*)hal_SPI0_IRQHandler, 
 		(const uint32_t*)hal_SPI1_IRQHandler,     // 236 - 239
     (const uint32_t*)hal_GPIO_IRQHandler, //240 gpio interrupt handler
