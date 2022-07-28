@@ -1,0 +1,38 @@
+2022.07.28
+version 1.1.3
+1, fix ssi cannot support concurrent running spim and spis;
+2, fix i2c slave INT entrance bug
+3, add bleGsensor example;
+4, add building scripts;
+
+
+2021.07.02
+version 1.1.2
+1，增加RTC日历demo；
+2，增加QMS7926做sensorHub的例程；
+3，修正UART不能工作在9600波特率的问题；
+4，修正ap_timer demo缺少中断处理的问题；
+5, 修正ADC demo不能处理event的问题；
+
+2021.01.27
+version 1.1.1
+1，更新天意合芯心率血氧模块到HX3690L；
+2，增加QMA7981抬手亮屏和计步器功能；
+3，增加SPI slave mode支持。
+
+2020.04.29
+version 1.1
+1. 增加了天意合芯HRS3300心率模块驱动范例程序；并应用于手环demo范例程序；
+2、增加了ST7789驱动的240x240，262K色的液晶屏幕驱动范例，实际工作在65K色；
+3、修正了I2C驱动程序的bug，在deinit函数中关闭了I2C时钟；
+4、修正了所有用到ADC功能的范例程序，更新到最新的ADC驱动。
+
+2020.03.18
+version：1.0
+1.  增加了sunnon机械手表指针的驱动范例程序，可以正走、反走；example\peripheral\Watchhands；
+2.  修正了SPI1不能发送的问题；
+3.  修正了ADC不支持多通道的问题，修正了兼容性问题；
+
+2020.03.10
+version: 1.0， 
+初始发布。
