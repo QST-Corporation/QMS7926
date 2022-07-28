@@ -3,8 +3,8 @@
  * Auto generated Run-Time-Environment Configuration File
  *      *** Do not modify ! ***
  *
- * Project: 'iBeacon' 
- * Target:  'iBeacon Sample' 
+ * Project: 'bleGsensor' 
+ * Target:  'gsensor' 
  */
 
 #ifndef RTE_COMPONENTS_H
